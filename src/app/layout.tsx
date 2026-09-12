@@ -18,7 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 // Public site origin for absolute metadata URLs; localhost fallback in development.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// `||` (not `??`) so an unset NEXT_PUBLIC_SITE_URL — which the bundler can inline as an empty
+// string rather than undefined — still falls back instead of producing `new URL('')`.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 const title = "PrivyPay — Your payment agent, wherever you work";
 const description =

@@ -48,18 +48,28 @@ const schema = z.object({
 
 export type Env = z.infer<typeof schema>;
 
-function load(): Env {
-  const parsed = schema.safeParse(process.env);
+/**
+ * Validate an environment source into typed config. Exported for testing; the app calls it
+ * once with `process.env`.
+ *
+ * A key present but empty (e.g. `DATABASE_URL=` in a .env copied from .env.example) means "not
+ * set", not "malformed" — empty strings are coerced to undefined so optionals and defaults
+ * apply. Only a present, non-empty, actually-invalid value fails validation.
+ */
+export function parseEnv(source: Record<string, string | undefined>): Env {
+  const cleaned: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(source)) {
+    cleaned[key] = value === '' ? undefined : value;
+  }
+  const parsed = schema.safeParse(cleaned);
   if (!parsed.success) {
-    // A malformed value that *is* present (e.g. a non-URL DATABASE_URL) is a real
-    // misconfiguration and should surface immediately, even at this stage.
     const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid environment configuration: ${issues}`);
   }
   return parsed.data;
 }
 
-export const env: Env = load();
+export const env: Env = parseEnv(process.env);
 
 /**
  * Read a variable that a feature cannot run without. Throws a specific error naming the
