@@ -1,5 +1,5 @@
-import PrivyPay from "@/components/PrivyPay";
+import LandingEntry from "./LandingEntry";
 
 export default function Home() {
-  return <PrivyPay />;
+  return <LandingEntry />;
 }
