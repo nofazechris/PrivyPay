@@ -66,3 +66,17 @@
   border-color: var(--pp-primary);
   box-shadow: var(--pp-focus-ring);
 }
+
+/* Entrance for provider-managed toasts (dismissal is JS-timed, so this is entrance only,
+   unlike the design's full-cycle pp-toast). Disabled by the reduced-motion guard in
+   design.css, which targets all animations. */
+@keyframes pp-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Shimmer for loading skeletons (§101). */
+@keyframes pp-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
