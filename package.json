@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "design:build": "node tools/transpile.js \"design/PrivyPay v3.dc.html\" src/components/screens src/styles/design.css",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "16.3.5",
@@ -20,6 +22,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "parse5": "^7.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

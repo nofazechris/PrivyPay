@@ -1,0 +1,2400 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#F6F7F9;color:#0E1420;-webkit-font-smoothing:antialiased;font-family:'Geist',system-ui,sans-serif}
+  a{color:#1B45D7;text-decoration:none}
+  a:hover{color:#153AB4}
+  input,button{font-family:inherit}
+  input::placeholder{color:#6C7484}
+  :focus-visible{outline:2px solid #1B45D7;outline-offset:2px}
+  @keyframes pp-up{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:none}}
+  @keyframes pp-in-l{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
+  @keyframes pp-in-r{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
+  @keyframes pp-fade{from{opacity:0}to{opacity:1}}
+  @keyframes pp-sheet{from{opacity:0;transform:translateY(18px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes pp-spin{to{transform:rotate(360deg)}}
+  @keyframes pp-pop{0%{transform:scale(.6);opacity:0}62%{transform:scale(1.07)}100%{transform:scale(1);opacity:1}}
+  @keyframes pp-toast{0%{opacity:0;transform:translate(-50%,10px)}12%{opacity:1;transform:translate(-50%,0)}88%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,6px)}}
+  @keyframes pp-atmos{0%{transform:translate3d(-1.5%,-1%,0) scale(1.02)}100%{transform:translate3d(2%,1.5%,0) scale(1.07)}}
+  @keyframes pp-atmos-2{0%{transform:translate3d(1.5%,1%,0) scale(1.05)}100%{transform:translate3d(-2%,-1.5%,0) scale(1.01)}}
+  @keyframes pp-caret{0%,48%{opacity:1}49%,100%{opacity:0}}
+  @keyframes pp-pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.35)}}
+  @keyframes pp-dash{to{stroke-dashoffset:-220}}
+  @keyframes pp-step{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#F6F7F9">
+
+<sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Landing">
+
+  <div style="position:sticky;top:0;z-index:40;background:rgba(246,247,249,.88);backdrop-filter:blur(10px);border-bottom:1px solid #E8EAEF">
+    <div style="max-width:1160px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:26px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:20px;height:20px;border-radius:6px;background:#1B45D7"></div>
+        <span style="font-size:16px;font-weight:600;letter-spacing:-.02em">PrivyPay</span>
+      </div>
+      <div style="display:flex;gap:20px;margin-left:auto;flex-wrap:wrap">
+        <a href="#agent" style="font-size:14px;color:#5B6472">Agent</a>
+        <a href="#product" style="font-size:14px;color:#5B6472">Usernames</a>
+        <a href="#how" style="font-size:14px;color:#5B6472">How it works</a>
+        <a href="#connected" style="font-size:14px;color:#5B6472">Connected</a>
+        <a href="#security" style="font-size:14px;color:#5B6472">Security</a>
+      </div>
+      <button onClick="{{ enterApp }}" style="border:none;background:#1B45D7;color:#fff;font-size:14px;font-weight:500;padding:10px 18px;border-radius:11px;cursor:pointer;transition:background .16s ease,transform .16s ease" style-hover="background:#153AB4;transform:translateY(-1px)" style-active="transform:translateY(0) scale(.985)">Get started</button>
+    </div>
+  </div>
+
+  <div style="position:relative;overflow:hidden;isolation:isolate">
+      <div style="position:absolute;inset:-12%;z-index:0;pointer-events:none;background:radial-gradient(46% 42% at 68% 22%,rgba(27,69,215,.10),rgba(27,69,215,0) 70%);animation:pp-atmos 34s ease-in-out infinite alternate"></div>
+      <div style="position:absolute;inset:-12%;z-index:0;pointer-events:none;background:radial-gradient(40% 44% at 18% 74%,rgba(27,69,215,.06),rgba(27,69,215,0) 72%);animation:pp-atmos-2 44s ease-in-out infinite alternate"></div>
+      <div style="position:absolute;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(90deg,rgba(27,69,215,.045) 1px,transparent 1px),linear-gradient(rgba(27,69,215,.045) 1px,transparent 1px);background-size:72px 72px;-webkit-mask-image:radial-gradient(72% 62% at 52% 38%,#000,transparent);mask-image:radial-gradient(72% 62% at 52% 38%,#000,transparent)"></div>
+      <div ref="{{ layerFarRef }}" style="position:absolute;inset:-7%;z-index:0;pointer-events:none;will-change:transform"><canvas ref="{{ canvasFarRef }}" aria-hidden="true" style="display:block;width:100%;height:100%"></canvas></div>
+      <div ref="{{ layerMidRef }}" style="position:absolute;inset:-7%;z-index:0;pointer-events:none;will-change:transform"><canvas ref="{{ canvasMidRef }}" aria-hidden="true" style="display:block;width:100%;height:100%"></canvas></div>
+      <div ref="{{ layerNearRef }}" style="position:absolute;inset:-7%;z-index:0;pointer-events:none;will-change:transform"><canvas ref="{{ canvasNearRef }}" aria-hidden="true" style="display:block;width:100%;height:100%"></canvas></div>
+  <div style="position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:clamp(42px,6vw,84px) 24px clamp(28px,4vw,44px);display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:clamp(30px,4.6vw,58px);align-items:center">
+    <div>
+      <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 0ms both;display:flex;align-items:center;gap:8px;font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.14em;color:#5B6472">
+        <span style="width:5px;height:5px;border-radius:50%;background:#1B45D7;display:inline-block;animation:pp-pulse 2.4s ease-in-out infinite"></span>AI PAYMENT AGENT · BUILT ON CELO
+      </div>
+      <h1 style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 70ms both;font-size:clamp(40px,6.2vw,62px);line-height:1.01;letter-spacing:-.042em;font-weight:600;margin:20px 0 0">Your payment agent,<br><span style="color:#5B6472">wherever you work.</span></h1>
+      <p style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 150ms both;font-size:clamp(16.5px,1.5vw,18px);line-height:1.65;color:#5B6472;max-width:458px;margin:22px 0 0;text-wrap:pretty">Send, request and manage stablecoin payments through a single intelligent payment layer connected to the tools you already use.</p>
+      <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 220ms both;display:flex;gap:10px;margin-top:28px;flex-wrap:wrap">
+        <button onClick="{{ enterApp }}" style="border:none;background:#0E1420;color:#fff;font-size:15px;font-weight:500;padding:13px 22px;border-radius:11px;cursor:pointer;transition:background .16s ease,transform .16s ease" style-hover="background:#1B45D7;transform:translateY(-1px)" style-active="transform:translateY(0) scale(.99)">Get started</button>
+        <a href="#how" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:15px;font-weight:500;padding:13px 22px;border-radius:11px;transition:border-color .16s ease,transform .16s ease" style-hover="border-color:#0E1420;transform:translateY(-1px)">See how it works</a>
+      </div>
+      <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 300ms both;display:flex;gap:20px;margin-top:30px;font-size:13px;color:#5F6878;flex-wrap:wrap">
+        <span>Instruction-driven</span><span>You confirm every payment</span><span>Settles on Celo</span>
+      </div>
+    </div>
+
+    <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 250ms both;position:relative">
+      <div style="position:absolute;inset:-46px -26px;background:radial-gradient(54% 46% at 64% 24%,rgba(27,69,215,.08),rgba(27,69,215,0) 72%);pointer-events:none"></div>
+      <div style="position:relative;background:#fff;border:1px solid #E4E7EC;border-radius:18px;padding:20px;box-shadow:0 30px 60px -38px rgba(14,20,32,.34)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:9px">
+            <div style="width:22px;height:22px;border-radius:7px;background:#1B45D7"></div>
+            <span style="font-size:14.5px;font-weight:600;letter-spacing:-.015em">PrivyPay</span>
+            <span style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6C7484">AGENT</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #DDE3F6;background:#F4F6FE;border-radius:999px;padding:5px 11px">
+            <span style="width:5px;height:5px;border-radius:50%;background:#1B45D7;display:inline-block;animation:pp-pulse 1.6s ease-in-out infinite"></span>
+            <span style="font-size:11.5px;font-weight:500;color:#153AB4;white-space:nowrap">{{ heroStateLabel }}</span>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;border:1px solid #EDEFF3;background:#FBFBFD;border-radius:13px;padding:14px 15px">
+          <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:#6C7484">WHAT WOULD YOU LIKE TO DO?</div>
+          <div style="display:flex;align-items:center;gap:3px;margin-top:10px;min-height:24px">
+            <span style="font-size:17.5px;font-weight:500;letter-spacing:-.018em">{{ heroTyped }}</span>
+            <span style="width:2px;height:20px;background:#1B45D7;display:inline-block;animation:pp-caret 1s step-end infinite"></span>
+          </div>
+        </div>
+
+        <sc-if value="{{ heroWorking }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:15px;display:grid;gap:9px;animation:pp-fade .22s ease both">
+          <sc-for list="{{ heroSteps }}" as="st" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;font-size:13.5px">
+              <span style="width:18px;height:18px;border-radius:50%;background:{{ st.bg }};color:{{ st.color }};font-size:10px;display:flex;align-items:center;justify-content:center;flex:none">{{ st.mark }}</span>
+              <span style="color:{{ st.textColor }}">{{ st.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ heroHasRecipient }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:15px;display:flex;align-items:center;gap:12px;border:1px solid #EDEFF3;border-radius:13px;padding:13px 14px;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both;flex-wrap:wrap">
+          <div style="width:34px;height:34px;border-radius:50%;background:#EDF1FE;color:#1B45D7;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none">S</div>
+          <div style="min-width:0">
+            <div style="font-size:15px;font-weight:600;letter-spacing:-.015em">@sarah</div>
+            <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5F6878;margin-top:2px">Sarah Okafor · 0x8F…21A</div>
+          </div>
+          <span style="margin-left:auto;font-size:11.5px;font-weight:500;color:#167A54">Resolved</span>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ heroPreview }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:15px;border:1px solid #DDE3F6;background:#FCFCFE;border-radius:13px;padding:16px;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both">
+          <div style="font-size:12.5px;color:#5F6878">Payment ready for confirmation</div>
+          <div style="font-size:32px;font-weight:600;letter-spacing:-.04em;margin-top:8px;font-variant-numeric:tabular-nums">$20.00 <span style="font-family:'Geist Mono',monospace;font-size:13px;font-weight:400;color:#5F6878">USDC</span></div>
+          <div style="display:grid;gap:10px;margin-top:15px;padding-top:14px;border-top:1px solid #EDEFF3">
+            <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5F6878">Network</span><span style="font-weight:500">Celo</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5F6878">Privacy</span><span style="font-weight:500;color:#167A54">Enabled</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5F6878">Estimated fee</span><span style="font-weight:500;font-variant-numeric:tabular-nums">$0.001</span></div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
+            <button onClick="{{ heroConfirm }}" style="border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:13px;border-radius:11px;cursor:pointer;transition:background .16s ease,transform .16s ease;flex:1;min-width:160px" style-hover="background:#153AB4;transform:translateY(-1px)" style-active="transform:translateY(0) scale(.99)">Confirm payment</button>
+            <button onClick="{{ heroReplay }}" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease;padding:13px 18px" style-hover="border-color:#0E1420">Cancel</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ heroSending }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:15px;border:1px solid #EDEFF3;border-radius:13px;padding:34px 16px;text-align:center;animation:pp-fade .2s ease both">
+          <div style="position:relative;width:44px;height:44px;margin:0 auto"><div style="position:absolute;inset:0;border-radius:50%;border:2px solid #EDEFF3;border-top-color:#1B45D7;animation:pp-spin .9s linear infinite"></div></div>
+          <div style="font-size:16px;font-weight:600;margin-top:18px;letter-spacing:-.018em">Sending payment</div>
+          <div style="font-size:13.5px;color:#5F6878;margin-top:6px">Submitting to Celo</div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ heroDone }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:15px;border:1px solid #EDEFF3;border-radius:13px;padding:20px;text-align:center;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both">
+          <div style="width:44px;height:44px;border-radius:50%;background:#1B45D7;color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;margin:0 auto;animation:pp-pop .34s cubic-bezier(.2,.8,.3,1) both">✓</div>
+          <div style="font-size:16.5px;font-weight:600;margin-top:16px;letter-spacing:-.02em">Payment sent</div>
+          <div style="font-size:34px;font-weight:600;letter-spacing:-.04em;margin-top:10px;font-variant-numeric:tabular-nums">$20.00</div>
+          <div style="font-size:14px;color:#5B6472;margin-top:4px">@sarah · Celo</div>
+          <div style="font-size:13px;color:#167A54;margin-top:9px">Completed</div>
+          <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#6C7484;margin-top:12px">0x8f…91a</div>
+          <button onClick="{{ heroReplay }}" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease;width:100%;margin-top:16px" style-hover="border-color:#0E1420">Replay</button>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+  <div id="agent" style="max-width:1160px;margin:0 auto;padding:clamp(38px,5vw,72px) 24px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(28px,4.2vw,54px);align-items:center">
+      <div data-reveal="left">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#5F6878">THE AGENT</div>
+        <h2 style="font-size:clamp(28px,3.8vw,40px);letter-spacing:-.038em;font-weight:600;margin:12px 0 0;max-width:420px">Payments, simply instructed.</h2>
+        <p style="font-size:16px;color:#5B6472;line-height:1.65;margin:16px 0 0;max-width:420px;text-wrap:pretty">Tell PrivyPay what you want to happen. It resolves the username, prepares the payment and hands it back to you for confirmation — nothing moves until you say so.</p>
+        <div style="margin-top:24px;display:grid;gap:11px;max-width:400px">
+          <div style="display:flex;gap:12px;font-size:14.5px"><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#1B45D7;width:26px;flex:none">01</span><span style="color:#5B6472">Send, request and schedule payments</span></div>
+          <div style="display:flex;gap:12px;font-size:14.5px"><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#1B45D7;width:26px;flex:none">02</span><span style="color:#5B6472">Resolve usernames and find contacts</span></div>
+          <div style="display:flex;gap:12px;font-size:14.5px"><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#1B45D7;width:26px;flex:none">03</span><span style="color:#5B6472">Check balances, status and receipts</span></div>
+          <div style="display:flex;gap:12px;font-size:14.5px"><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#1B45D7;width:26px;flex:none">04</span><span style="color:#5B6472">Work from PrivyPay or a connected service</span></div>
+        </div>
+      </div>
+      <div style="animation:pp-in-r .62s cubic-bezier(.2,.8,.3,1) both">
+        <div style="background:#fff;border:1px solid #E4E7EC;border-radius:18px;padding:clamp(18px,2.4vw,24px);box-shadow:0 28px 56px -42px rgba(14,20,32,.32)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:9px">
+              <div style="width:22px;height:22px;border-radius:7px;background:#1B45D7"></div>
+              <span style="font-size:14.5px;font-weight:600;letter-spacing:-.015em">PrivyPay agent</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;border:1px solid #DDE3F6;background:#F4F6FE;border-radius:999px;padding:5px 11px">
+              <span style="width:5px;height:5px;border-radius:50%;background:#1B45D7;display:inline-block;animation:pp-pulse 1.6s ease-in-out infinite"></span>
+              <span style="font-size:11.5px;font-weight:500;color:#153AB4">{{ cmdStateLabel }}</span>
+            </div>
+          </div>
+          <div style="font-size:clamp(19px,2.2vw,23px);font-weight:600;letter-spacing:-.028em;margin-top:16px">What would you like to do?</div>
+          <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">
+            <input value="{{ cmdInput }}" onChange="{{ onCmdInput }}" onKeyDown="{{ onCmdKey }}" placeholder="Send $20 to @sarah" style="flex:1;min-width:190px;border:1px solid #DCE0E7;background:#fff;border-radius:11px;padding:13px 15px;font-size:15px;outline:none;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+            <button onClick="{{ runCmd }}" style="border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:13px;border-radius:11px;cursor:pointer;transition:background .16s ease,transform .16s ease;padding:13px 20px" style-hover="background:#153AB4;transform:translateY(-1px)" style-active="transform:translateY(0) scale(.99)">Run</button>
+          </div>
+          <sc-if value="{{ cmdIdle }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
+            <sc-for list="{{ cmdSuggestions }}" as="sg" hint-placeholder-count="4">
+              <div onClick="{{ sg.onClick }}" tabIndex="0" onKeyDown="{{ sg.onKey }}" style="font-size:13px;color:#153AB4;border:1px solid #DDE3F6;background:#F4F6FE;border-radius:9px;padding:8px 12px;cursor:pointer;outline:none;transition:background .16s ease,transform .16s ease" style-hover="background:#E7EDFC;transform:translateY(-1px)">{{ sg.label }}</div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ cmdWorking }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;border:1px solid #EDEFF3;background:#FBFBFD;border-radius:14px;padding:16px;animation:pp-fade .2s ease both">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="position:relative;width:16px;height:16px;display:inline-block;flex:none"><span style="position:absolute;inset:0;border-radius:50%;border:2px solid #E4E8F6;border-top-color:#1B45D7;animation:pp-spin .8s linear infinite"></span></span>
+              <span style="font-size:14px;font-weight:500">{{ cmdStatusLabel }}</span>
+            </div>
+            <div style="display:grid;gap:9px;margin-top:13px">
+              <sc-for list="{{ cmdSteps }}" as="st" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;animation:pp-step .3s cubic-bezier(.2,.8,.3,1) both">
+                  <span style="width:18px;height:18px;border-radius:50%;background:{{ st.bg }};color:{{ st.color }};font-size:10px;display:flex;align-items:center;justify-content:center;flex:none">{{ st.mark }}</span>
+                  <span style="color:{{ st.textColor }}">{{ st.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ cmdAnswer }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;border:1px solid #EDEFF3;border-radius:14px;padding:17px;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both">
+            <div style="font-size:13px;color:#5F6878">{{ cmdAnswerLabel }}</div>
+            <div style="font-size:clamp(21px,2.5vw,27px);font-weight:600;letter-spacing:-.032em;margin-top:5px;font-variant-numeric:tabular-nums;text-wrap:pretty">{{ cmdAnswerValue }}</div>
+            <div style="display:grid;gap:11px;margin-top:15px">
+              <sc-for list="{{ cmdAnswerRows }}" as="a" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px;font-size:13.5px;flex-wrap:wrap">
+                  <span style="font-weight:600">{{ a.handle }}</span>
+                  <span style="color:#5F6878">{{ a.sub }}</span>
+                  <span style="margin-left:auto;font-weight:600;color:{{ a.color }};font-variant-numeric:tabular-nums">{{ a.amount }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <button onClick="{{ cmdReset }}" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease;margin-top:15px;padding:10px 16px">New instruction</button>
+          </div>
+          </sc-if>
+          <sc-if value="{{ cmdPreview }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;border:1px solid #DDE3F6;background:#FCFCFE;border-radius:14px;padding:17px;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both">
+            <div style="font-size:13px;color:#5F6878">{{ cmdPreviewTitle }}</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:13px;flex-wrap:wrap">
+              <div style="width:36px;height:36px;border-radius:50%;background:#EDF1FE;color:#1B45D7;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none">{{ cmdInitial }}</div>
+              <div style="min-width:0">
+                <div style="font-size:16px;font-weight:600;letter-spacing:-.018em">{{ cmdHandle }}</div>
+                <div style="font-size:12.5px;color:#5F6878;margin-top:1px">{{ cmdName }}</div>
+              </div>
+              <div style="margin-left:auto;font-size:24px;font-weight:600;letter-spacing:-.035em;font-variant-numeric:tabular-nums">${{ cmdAmountStr }}</div>
+            </div>
+            <div style="display:grid;gap:10px;margin-top:15px;padding-top:14px;border-top:1px solid #EDEFF3">
+              <sc-for list="{{ cmdMetaRows }}" as="m" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;gap:14px;font-size:13.5px"><span style="color:#5F6878">{{ m.label }}</span><span style="font-weight:500;text-align:right">{{ m.value }}</span></div>
+          </sc-for>
+            </div>
+            <div style="display:flex;gap:9px;margin-top:17px;flex-wrap:wrap">
+              <button onClick="{{ cmdConfirm }}" style="border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:13px;border-radius:11px;cursor:pointer;transition:background .16s ease,transform .16s ease;flex:1;min-width:170px" style-hover="background:#153AB4;transform:translateY(-1px)" style-active="transform:translateY(0) scale(.99)">{{ cmdConfirmLabel }}</button>
+              <button onClick="{{ cmdReset }}" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease;padding:13px 20px" style-hover="border-color:#0E1420">Cancel</button>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ cmdProcessing }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;border:1px solid #EDEFF3;border-radius:14px;padding:34px 17px;text-align:center;animation:pp-fade .2s ease both">
+            <div style="position:relative;width:44px;height:44px;margin:0 auto"><div style="position:absolute;inset:0;border-radius:50%;border:2px solid #EDEFF3;border-top-color:#1B45D7;animation:pp-spin .9s linear infinite"></div></div>
+            <div style="font-size:16px;font-weight:600;margin-top:18px;letter-spacing:-.018em">Sending payment</div>
+            <div style="font-size:13.5px;color:#5F6878;margin-top:6px">Submitting to Celo</div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ cmdDone }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;border:1px solid #EDEFF3;border-radius:14px;padding:18px;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both">
+            <div style="display:flex;align-items:center;gap:11px">
+              <span style="width:30px;height:30px;border-radius:50%;background:#1B45D7;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none;animation:pp-pop .34s cubic-bezier(.2,.8,.3,1) both">✓</span>
+              <div style="font-size:15.5px;font-weight:600;letter-spacing:-.015em">{{ cmdDoneTitle }}</div>
+            </div>
+            <div style="font-size:clamp(26px,3vw,33px);font-weight:600;letter-spacing:-.038em;margin-top:15px;font-variant-numeric:tabular-nums">${{ cmdAmountStr }} <span style="font-family:'Geist Mono',monospace;font-size:13px;font-weight:400;color:#5F6878">USDC</span></div>
+            <div style="display:grid;gap:10px;margin-top:15px;padding-top:14px;border-top:1px solid #F0F1F4">
+              <sc-for list="{{ cmdReceiptRows }}" as="m" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;gap:14px;font-size:13.5px"><span style="color:#5F6878">{{ m.label }}</span><span style="font-weight:500;text-align:right">{{ m.value }}</span></div>
+          </sc-for>
+            </div>
+            <button onClick="{{ cmdReset }}" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease;margin-top:16px;padding:11px 18px">New instruction</button>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1160px;margin:0 auto;padding:clamp(30px,4vw,58px) 24px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div data-reveal="up">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#5F6878">WHEREVER YOU WORK</div>
+        <h2 style="font-size:clamp(26px,3.4vw,36px);letter-spacing:-.036em;font-weight:600;margin:12px 0 0;max-width:480px">The same agent, inside the tools you already have open.</h2>
+      </div>
+      <p style="font-size:15px;color:#5B6472;line-height:1.65;margin:0;max-width:360px;text-wrap:pretty">A payment can start anywhere. It is always prepared by PrivyPay, always confirmed by you, and always settles on Celo.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(288px,1fr));gap:16px;margin-top:clamp(22px,3vw,36px)">
+      <div style="animation:pp-up .6s cubic-bezier(.2,.8,.3,1) 0ms both;background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:22px;transition:transform .2s cubic-bezier(.2,.8,.3,1),box-shadow .2s ease" style-hover="transform:translateY(-4px);box-shadow:0 24px 48px -34px rgba(14,20,32,.3)">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:34px;height:34px;border-radius:10px;background:#F3F4F6;border:1px solid #E3E5E9;display:flex;align-items:center;justify-content:center;flex:none"><img src="assets/logo-chatgpt.png" alt="ChatGPT" style="width:20px;height:20px;object-fit:contain" /></div>
+          <div style="font-size:15.5px;font-weight:600;letter-spacing:-.018em">ChatGPT</div>
+          <span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#153AB4;background:#F4F6FE;border:1px solid #DDE3F6;padding:4px 8px;border-radius:7px">MCP</span>
+        </div>
+        <div style="display:grid;gap:8px;margin-top:18px">
+          <div style="font-size:13.5px;background:#F6F7F9;border-radius:11px 11px 11px 3px;padding:10px 12px;justify-self:start;max-width:88%">Send $20 to @sarah</div>
+          <div style="font-size:13.5px;background:#F4F6FE;border:1px solid #E4EAFB;border-radius:11px 11px 3px 11px;padding:10px 12px;justify-self:end;max-width:92%;text-align:right">I found @sarah — Sarah Okafor.<br><span style="font-weight:600">$20.00 USDC · Celo</span><br><span style="color:#5F6878">Confirm to send.</span></div>
+          <div style="font-size:13.5px;background:#F6F7F9;border-radius:11px 11px 11px 3px;padding:10px 12px;justify-self:start">Confirm</div>
+          <div style="font-size:13.5px;background:#F4F6FE;border:1px solid #E4EAFB;border-radius:11px 11px 3px 11px;padding:10px 12px;justify-self:end;max-width:92%;text-align:right"><span style="font-weight:600">Payment sent.</span> $20.00 USDC to @sarah.<br><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#6C7484">0x8f…91a</span></div>
+        </div>
+      </div>
+
+      <div style="animation:pp-up .6s cubic-bezier(.2,.8,.3,1) 120ms both;background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:22px;transition:transform .2s cubic-bezier(.2,.8,.3,1),box-shadow .2s ease" style-hover="transform:translateY(-4px);box-shadow:0 24px 48px -34px rgba(14,20,32,.3)">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:34px;height:34px;border-radius:10px;background:#FBF0EA;border:1px solid #F3DED1;display:flex;align-items:center;justify-content:center;flex:none"><img src="assets/logo-claude.png" alt="Claude" style="width:20px;height:20px;border-radius:5px;object-fit:contain" /></div>
+          <div style="font-size:15.5px;font-weight:600;letter-spacing:-.018em">Claude</div>
+          <span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#153AB4;background:#F4F6FE;border:1px solid #DDE3F6;padding:4px 8px;border-radius:7px">MCP</span>
+        </div>
+        <div style="margin-top:18px;border:1px solid #EDEFF3;border-radius:12px;padding:14px;font-family:'Geist Mono',monospace;font-size:12.5px;color:#5B6472;display:grid;gap:9px">
+          <div style="color:#0E1420">Pay @contractor 500 USDC</div>
+          <div style="display:flex;gap:9px"><span style="color:#167A54">✓</span><span>find_contact → @contractor</span></div>
+          <div style="display:flex;gap:9px"><span style="color:#167A54">✓</span><span>send_payment → prepared</span></div>
+          <div style="display:flex;gap:9px"><span style="color:#1B45D7">→</span><span style="color:#0E1420">awaiting confirmation</span></div>
+          <div style="display:flex;gap:9px"><span style="color:#167A54">✓</span><span>receipt 0x4c…8d2</span></div>
+        </div>
+        <div style="font-size:13px;color:#5F6878;line-height:1.6;margin-top:14px">Payment tools available in your Claude workflow, with confirmation still required.</div>
+      </div>
+
+      <div style="animation:pp-up .6s cubic-bezier(.2,.8,.3,1) 240ms both;background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:22px;transition:transform .2s cubic-bezier(.2,.8,.3,1),box-shadow .2s ease" style-hover="transform:translateY(-4px);box-shadow:0 24px 48px -34px rgba(14,20,32,.3)">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:34px;height:34px;border-radius:10px;background:#EAF3EE;border:1px solid #D9EBE1;display:flex;align-items:center;justify-content:center;flex:none"><img src="assets/logo-whatsapp.png" alt="WhatsApp" style="width:20px;height:20px;object-fit:contain" /></div>
+          <div style="font-size:15.5px;font-weight:600;letter-spacing:-.018em">WhatsApp</div>
+          <span style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#167A54;background:#EAF3EE;border:1px solid #D9EBE1;padding:4px 8px;border-radius:7px">LIVE</span>
+        </div>
+        <div style="display:grid;gap:8px;margin-top:18px">
+          <div style="font-size:13.5px;background:#F6F7F9;border-radius:11px 11px 11px 3px;padding:10px 12px;justify-self:start">Send $20 to @sarah</div>
+          <div style="font-size:13.5px;background:#EAF3EE;border:1px solid #D9EBE1;border-radius:11px 11px 3px 11px;padding:10px 12px;justify-self:end;max-width:92%;text-align:right">I found @sarah.<br><span style="font-weight:600">$20 USDC · Celo</span><br><span style="color:#5F6878">Reply CONFIRM to send.</span></div>
+          <div style="font-size:13.5px;background:#F6F7F9;border-radius:11px 11px 11px 3px;padding:10px 12px;justify-self:start;font-weight:600">CONFIRM</div>
+          <div style="font-size:13.5px;background:#EAF3EE;border:1px solid #D9EBE1;border-radius:11px 11px 3px 11px;padding:10px 12px;justify-self:end;max-width:92%;text-align:right"><span style="font-weight:600">Payment sent.</span> $20 USDC to @sarah.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="how" style="max-width:1160px;margin:0 auto;padding:clamp(44px,5.6vw,78px) 24px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <h2 style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 0ms both;font-size:clamp(28px,3.8vw,40px);letter-spacing:-.038em;font-weight:600;margin:0;max-width:480px">From instruction to receipt.</h2>
+      <p style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 90ms both;font-size:15px;color:#5B6472;line-height:1.65;margin:0;max-width:340px">No wallet to install, no address to copy. Six steps, and only one of them is yours to approve.</p>
+    </div>
+    <div style="margin-top:clamp(26px,3.2vw,40px);display:grid;grid-template-columns:repeat(auto-fit,minmax(252px,1fr));gap:0 26px;border-top:1px solid #E4E7EC">
+      <div data-reveal="up" data-reveal-delay="0" style="padding:24px 26px 28px 0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:.12em;color:#1B45D7">01</div>
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(27,69,215,.35),rgba(27,69,215,.04))"></div>
+        </div>
+        <div style="font-size:18px;font-weight:600;letter-spacing:-.022em;margin-top:14px">Create your account</div>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:8px 0 0;max-width:290px;text-wrap:pretty">Passkey or email, then choose the username people will pay.</p>
+        <div style="display:inline-flex;align-items:center;gap:7px;border:1px solid #E4E7EC;background:#fff;border-radius:10px;padding:9px 13px"><span style="font-family:'Geist Mono',monospace;font-size:13px;color:#6C7484">@</span><span style="font-size:15px;font-weight:600">chris</span></div>
+      </div>
+      <div data-reveal="up" data-reveal-delay="80" style="padding:24px 26px 28px 0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:.12em;color:#1B45D7">02</div>
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(27,69,215,.35),rgba(27,69,215,.04))"></div>
+        </div>
+        <div style="font-size:18px;font-weight:600;letter-spacing:-.022em;margin-top:14px">Your wallet is ready</div>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:8px 0 0;max-width:290px;text-wrap:pretty">PrivyPay provisions your Celo payment wallet automatically.</p>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#167A54"><span style="width:6px;height:6px;border-radius:50%;background:#167A54;display:inline-block"></span>Wallet ready</div>
+      </div>
+      <div data-reveal="up" data-reveal-delay="160" style="padding:24px 26px 28px 0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:.12em;color:#1B45D7">03</div>
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(27,69,215,.35),rgba(27,69,215,.04))"></div>
+        </div>
+        <div style="font-size:18px;font-weight:600;letter-spacing:-.022em;margin-top:14px">Connect your tools</div>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:8px 0 0;max-width:290px;text-wrap:pretty">Reach your agent from ChatGPT, Claude or WhatsApp — or stay in PrivyPay.</p>
+      </div>
+      <div data-reveal="up" data-reveal-delay="240" style="padding:24px 26px 28px 0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:.12em;color:#1B45D7">04</div>
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(27,69,215,.35),rgba(27,69,215,.04))"></div>
+        </div>
+        <div style="font-size:18px;font-weight:600;letter-spacing:-.022em;margin-top:14px">Give an instruction</div>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:8px 0 0;max-width:290px;text-wrap:pretty">Plain language is the whole interface.</p>
+        <div style="font-family:'Geist Mono',monospace;font-size:13px;color:#153AB4;background:#F4F6FE;border:1px solid #DDE3F6;border-radius:10px;padding:9px 12px;display:inline-block">“Send $20 to @sarah”</div>
+      </div>
+      <div data-reveal="up" data-reveal-delay="320" style="padding:24px 26px 28px 0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:.12em;color:#1B45D7">05</div>
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(27,69,215,.35),rgba(27,69,215,.04))"></div>
+        </div>
+        <div style="font-size:18px;font-weight:600;letter-spacing:-.022em;margin-top:14px">Confirm</div>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:8px 0 0;max-width:290px;text-wrap:pretty">PrivyPay shows recipient, amount, network and fee before anything is submitted.</p>
+        <div style="font-size:13.5px;font-weight:500;color:#153AB4">Awaiting your confirmation</div>
+      </div>
+      <div data-reveal="up" data-reveal-delay="400" style="padding:24px 26px 28px 0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:.12em;color:#1B45D7">06</div>
+          <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(27,69,215,.35),rgba(27,69,215,.04))"></div>
+        </div>
+        <div style="font-size:18px;font-weight:600;letter-spacing:-.022em;margin-top:14px">Done</div>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:8px 0 0;max-width:290px;text-wrap:pretty">The payment executes on Celo and returns a receipt you can check.</p>
+        <div style="font-family:'Geist Mono',monospace;font-size:13px;color:#5B6472">0x8f…91a · Completed</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="product" style="max-width:1160px;margin:0 auto;padding:clamp(34px,4.4vw,62px) 24px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(28px,4.2vw,56px);align-items:center">
+      <div data-reveal="left">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#5F6878">USERNAMES</div>
+        <h2 style="font-size:clamp(28px,3.8vw,40px);letter-spacing:-.038em;font-weight:600;margin:12px 0 0;max-width:420px">People, not addresses.</h2>
+        <p style="font-size:16px;color:#5B6472;line-height:1.65;margin:16px 0 0;max-width:410px;text-wrap:pretty">Name a person, not a string of characters. The agent resolves the username to a Celo account and shows you the address it found before you confirm.</p>
+        <div style="margin-top:24px;display:grid;gap:10px;max-width:360px">
+          <div style="display:flex;align-items:center;gap:14px;font-size:14.5px"><span style="font-family:'Geist Mono',monospace;font-size:13px;color:#1B45D7;width:74px">@sarah</span><span style="color:#5B6472">Sarah Okafor</span></div>
+          <div style="display:flex;align-items:center;gap:14px;font-size:14.5px"><span style="font-family:'Geist Mono',monospace;font-size:13px;color:#1B45D7;width:74px">@mike</span><span style="color:#5B6472">Mike Johnson</span></div>
+          <div style="display:flex;align-items:center;gap:14px;font-size:14.5px"><span style="font-family:'Geist Mono',monospace;font-size:13px;color:#1B45D7;width:74px">@designer</span><span style="color:#5B6472">Ada Nwosu</span></div>
+        </div>
+      </div>
+      <div style="animation:pp-in-r .62s cubic-bezier(.2,.8,.3,1) both;background:#fff;border:1px solid #E4E7EC;border-radius:18px;padding:clamp(22px,3vw,30px)">
+        <div style="font-family:'Geist Mono',monospace;font-size:13.5px;color:#153AB4;background:#F4F6FE;border:1px solid #DDE3F6;border-radius:11px;padding:12px 14px">“Send $120 to @sarah”</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding:6px 0">
+          <div style="width:1px;height:22px;background:linear-gradient(180deg,rgba(27,69,215,.35),rgba(27,69,215,.08))"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;border:1px solid #EDEFF3;border-radius:13px;padding:14px;flex-wrap:wrap">
+          <div style="width:36px;height:36px;border-radius:50%;background:#EDF1FE;color:#1B45D7;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none">S</div>
+          <div style="min-width:0">
+            <div style="font-size:16px;font-weight:600;letter-spacing:-.018em">@sarah</div>
+            <div style="font-size:12.5px;color:#5F6878;margin-top:1px">Sarah Okafor</div>
+          </div>
+          <span style="margin-left:auto;font-size:11.5px;font-weight:500;color:#167A54">Resolved by agent</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding:6px 0">
+          <div style="width:1px;height:22px;background:linear-gradient(180deg,rgba(27,69,215,.35),rgba(27,69,215,.08))"></div>
+        </div>
+        <div style="border:1px solid #EDEFF3;border-radius:13px;padding:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-size:13px;color:#5F6878">Celo payment wallet</div>
+          <div style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:13px;color:#0E1420">0x8F…21A</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding:6px 0">
+          <div style="width:1px;height:22px;background:linear-gradient(180deg,rgba(27,69,215,.35),rgba(27,69,215,.08))"></div>
+        </div>
+        <div style="border:1px solid #DDE3F6;background:#FCFCFE;border-radius:13px;padding:16px">
+          <div style="font-size:12.5px;color:#5F6878">Ready to confirm</div>
+          <div style="font-size:30px;font-weight:600;letter-spacing:-.04em;margin-top:6px;font-variant-numeric:tabular-nums">$120.00 <span style="font-family:'Geist Mono',monospace;font-size:13px;font-weight:400;color:#5F6878">USDC</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1160px;margin:0 auto;padding:clamp(26px,3.4vw,44px) 24px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:16px">
+      <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 0ms both;background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:clamp(22px,3vw,30px)">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#5F6878">RECEIVE</div>
+        <h3 style="font-size:clamp(21px,2.5vw,26px);letter-spacing:-.03em;font-weight:600;margin:12px 0 0">Get paid by username.</h3>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:10px 0 20px">Share your PrivyPay username or Celo address to receive supported stablecoins.</p>
+        <div style="border:1px solid #EDEFF3;border-radius:12px;padding:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          {{ qrSmall }}
+          <div style="min-width:118px">
+            <div style="font-size:19px;font-weight:600;letter-spacing:-.02em">@chris</div>
+            <div style="font-size:12.5px;color:#5F6878;margin-top:2px">Celo</div>
+            <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#5B6472;margin-top:10px">0x8A…29F</div>
+          </div>
+        </div>
+      </div>
+      <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 110ms both;background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:clamp(22px,3vw,30px)">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#5F6878">REQUESTS</div>
+        <h3 style="font-size:clamp(21px,2.5vw,26px);letter-spacing:-.03em;font-weight:600;margin:12px 0 0">Ask, and keep track.</h3>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:10px 0 20px">“Request $250 from @mike for the logo.” The agent drafts it; you send it and follow its status.</p>
+        <div style="border:1px solid #EDEFF3;border-radius:12px;padding:15px 16px;display:flex;align-items:center;gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14.5px;font-weight:600">@mike</div>
+            <div style="font-size:12.5px;color:#5F6878;margin-top:2px">Logo design</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px;font-weight:600;font-variant-numeric:tabular-nums">$250.00</div>
+            <div style="font-size:12px;color:#8A6A1E;margin-top:2px">Pending</div>
+          </div>
+        </div>
+      </div>
+      <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 220ms both;background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:clamp(22px,3vw,30px)">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#5F6878">RECURRING</div>
+        <h3 style="font-size:clamp(21px,2.5vw,26px);letter-spacing:-.03em;font-weight:600;margin:12px 0 0">Set it once.</h3>
+        <p style="font-size:14.5px;color:#5B6472;line-height:1.6;margin:10px 0 20px">“Pay @designer $200 every Friday.” Confirm once, then pause or cancel whenever you want.</p>
+        <div style="border:1px solid #EDEFF3;border-radius:12px;padding:15px 16px">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14.5px;font-weight:600">@designer</div>
+              <div style="font-size:12.5px;color:#5F6878;margin-top:2px">Every Friday · next Sep 18</div>
+            </div>
+            <div style="font-size:15px;font-weight:600;font-variant-numeric:tabular-nums">$200.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="connected" style="max-width:1160px;margin:0 auto;padding:clamp(40px,5.2vw,74px) 24px">
+    <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 0ms both;font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#5F6878">CONNECTED SERVICES</div>
+    <h2 style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 70ms both;font-size:clamp(28px,3.8vw,40px);letter-spacing:-.035em;font-weight:600;margin:12px 0 0;max-width:520px">PrivyPay works with the tools you already use.</h2>
+    <p style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 140ms both;font-size:16px;color:#5B6472;line-height:1.65;margin:14px 0 0;max-width:480px">Connect a service and start a payment from it. Every payment is still reviewed and confirmed in PrivyPay before it settles.</p>
+
+    <div data-reveal="up" style="margin-top:clamp(28px,3.4vw,42px);border:1px solid #E4E7EC;background:#FBFBFD;border-radius:18px;padding:clamp(20px,3vw,30px);margin-bottom:18px">
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+        <div style="border:1px solid #E4E7EC;border-radius:12px;padding:13px 14px;text-align:center;background:#fff">
+          <div style="font-size:14px;font-weight:600;letter-spacing:-.015em">ChatGPT</div>
+          <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#6C7484;margin-top:5px">MCP</div>
+        </div>
+        <div style="border:1px solid #E4E7EC;border-radius:12px;padding:13px 14px;text-align:center;background:#fff">
+          <div style="font-size:14px;font-weight:600;letter-spacing:-.015em">Claude</div>
+          <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#6C7484;margin-top:5px">MCP</div>
+        </div>
+        <div style="border:1px solid #E4E7EC;border-radius:12px;padding:13px 14px;text-align:center;background:#fff">
+          <div style="font-size:14px;font-weight:600;letter-spacing:-.015em">WhatsApp</div>
+          <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#6C7484;margin-top:5px">MESSAGING</div>
+        </div>
+      </div>
+      <svg viewBox="0 0 600 64" preserveAspectRatio="none" style="display:block;width:100%;height:58px" aria-hidden="true">
+        <path d="M100 2 C100 40 300 24 300 62" fill="none" stroke="#C9D3F2" strokeWidth="1.4" strokeDasharray="5 7" style="animation:pp-dash 7s linear infinite"></path>
+        <path d="M300 2 L300 62" fill="none" stroke="#C9D3F2" strokeWidth="1.4" strokeDasharray="5 7" style="animation:pp-dash 6s linear infinite"></path>
+        <path d="M500 2 C500 40 300 24 300 62" fill="none" stroke="#C9D3F2" strokeWidth="1.4" strokeDasharray="5 7" style="animation:pp-dash 8s linear infinite"></path>
+      </svg>
+      <div style="border:1px solid #DDE3F6;background:#F4F6FE;border-radius:14px;padding:16px;text-align:center">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+          <span style="width:6px;height:6px;border-radius:50%;background:#1B45D7;display:inline-block;animation:pp-pulse 2s ease-in-out infinite"></span>
+          <div style="font-size:15.5px;font-weight:600;letter-spacing:-.018em;color:#153AB4">PrivyPay agent · cloud</div>
+        </div>
+        <div style="font-size:13px;color:#5B6472;margin-top:7px;max-width:430px;margin-left:auto;margin-right:auto;line-height:1.6">Resolves recipients, prepares payments, holds them for your confirmation, and keeps the receipt.</div>
+      </div>
+      <svg viewBox="0 0 600 46" preserveAspectRatio="none" style="display:block;width:100%;height:42px" aria-hidden="true">
+        <path d="M300 0 L300 44" fill="none" stroke="#C9D3F2" strokeWidth="1.4" strokeDasharray="5 7" style="animation:pp-dash 5s linear infinite"></path>
+      </svg>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+        <div style="border:1px solid #E4E7EC;border-radius:12px;padding:13px 15px;background:#fff;display:flex;align-items:center;gap:10px">
+          <div style="width:16px;height:16px;border-radius:50%;background:#F5D96B;border:1px solid #E2C453;flex:none"></div>
+          <div style="font-size:14px;font-weight:600">Celo</div>
+          <div style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#6C7484">SETTLEMENT</div>
+        </div>
+        <div style="border:1px solid #E4E7EC;border-radius:12px;padding:13px 15px;background:#fff;display:flex;align-items:center;gap:10px">
+          <div style="font-size:14px;font-weight:600">Receipt</div>
+          <div style="margin-left:auto;font-family:'Geist Mono',monospace;font-size:12px;color:#5B6472">0x8f…91a</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:16px">
+      <sc-for list="{{ serviceCards }}" as="sv" hint-placeholder-count="3">
+        <div onClick="{{ sv.onOpen }}" tabIndex="0" onKeyDown="{{ sv.onKey }}" style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) both;background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:clamp(26px,3vw,34px) 26px 26px;display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;outline:none;transition:transform .2s cubic-bezier(.2,.8,.3,1),box-shadow .2s ease,border-color .2s ease" style-hover="transform:translateY(-4px);box-shadow:0 24px 48px -34px rgba(14,20,32,.34);border-color:#D5DAE3">
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6C7484;align-self:flex-start">{{ sv.index }}</div>
+          <div style="width:72px;height:72px;border-radius:20px;background:{{ sv.markBg }};border:1px solid {{ sv.markBorder }};display:flex;align-items:center;justify-content:center;margin-top:16px">
+            <sc-if value="{{ sv.isChatgpt }}" hint-placeholder-val="{{ false }}"><img src="assets/logo-chatgpt.png" alt="ChatGPT" style="width:48px;height:48px;object-fit:contain" /></sc-if>
+            <sc-if value="{{ sv.isClaude }}" hint-placeholder-val="{{ false }}"><img src="assets/logo-claude.png" alt="Claude" style="width:48px;height:48px;border-radius:11px;object-fit:contain" /></sc-if>
+            <sc-if value="{{ sv.isWhatsapp }}" hint-placeholder-val="{{ false }}"><img src="assets/logo-whatsapp.png" alt="WhatsApp" style="width:48px;height:48px;object-fit:contain" /></sc-if>
+          </div>
+          <div style="font-size:19px;font-weight:600;letter-spacing:-.02em;margin-top:18px">{{ sv.name }}</div>
+          <p style="font-size:14px;line-height:1.6;color:#5B6472;margin:9px 0 0;max-width:230px;text-wrap:pretty">{{ sv.desc }}</p>
+          <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#153AB4;background:#F4F6FE;border:1px solid #DDE3F6;padding:5px 10px;border-radius:8px;margin-top:16px">{{ sv.availability }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="font-size:13px;color:#5F6878;margin-top:18px;max-width:560px;line-height:1.6">Connections are managed in your dashboard. A payment started in a connected service is always confirmed in PrivyPay.</div>
+  </div>
+
+  <div id="security" style="max-width:1160px;margin:0 auto;padding:clamp(40px,5.2vw,72px) 24px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(26px,4vw,54px)">
+      <div data-reveal="up">
+        <h2 style="font-size:clamp(28px,3.8vw,40px);letter-spacing:-.038em;font-weight:600;margin:0;max-width:360px">Your money deserves a careful interface.</h2>
+        <p style="font-size:15.5px;color:#5B6472;line-height:1.65;margin:16px 0 0;max-width:380px">The agent can prepare anything. It can never move money on its own.</p>
+      </div>
+      <div data-reveal="up" data-reveal-delay="110">
+        <div style="padding:18px 0;border-top:1px solid #E4E7EC;display:flex;gap:20px;flex-wrap:wrap">
+          <div style="font-size:15px;font-weight:600;min-width:190px">Account security</div>
+          <p style="flex:1;min-width:200px;font-size:14px;color:#5B6472;line-height:1.6;margin:0">Passkey or email sign-in. Your payment wallet is provisioned with the account.</p>
+        </div>
+        <div style="padding:18px 0;border-top:1px solid #E4E7EC;display:flex;gap:20px;flex-wrap:wrap">
+          <div style="font-size:15px;font-weight:600;min-width:190px">Every payment confirmed</div>
+          <p style="flex:1;min-width:200px;font-size:14px;color:#5B6472;line-height:1.6;margin:0">Recipient, amount, network and fee are shown before anything is submitted.</p>
+        </div>
+        <div style="padding:18px 0;border-top:1px solid #E4E7EC;display:flex;gap:20px;flex-wrap:wrap">
+          <div style="font-size:15px;font-weight:600;min-width:190px">Username resolution</div>
+          <p style="flex:1;min-width:200px;font-size:14px;color:#5B6472;line-height:1.6;margin:0">Handles resolve to a Celo address you can verify at review time.</p>
+        </div>
+        <div style="padding:18px 0;border-top:1px solid #E4E7EC;border-bottom:1px solid #E4E7EC;display:flex;gap:20px;flex-wrap:wrap">
+          <div style="font-size:15px;font-weight:600;min-width:190px">Controlled permissions</div>
+          <p style="flex:1;min-width:200px;font-size:14px;color:#5B6472;line-height:1.6;margin:0">Each connected service has its own caps, and every payment it starts comes back to you to confirm.</p>
+        </div>
+        <div style="padding:18px 0;border-top:1px solid #E4E7EC;display:flex;gap:20px;flex-wrap:wrap">
+          <div style="font-size:15px;font-weight:600;min-width:190px">Receipts you can check</div>
+          <p style="flex:1;min-width:200px;font-size:14px;color:#5B6472;line-height:1.6;margin:0">Each payment keeps a receipt with its Celo transaction reference. Transactions on Celo are public.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1160px;margin:0 auto;padding:0 24px clamp(34px,4.4vw,58px)">
+    <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 0ms both;border-top:1px solid #E4E7EC;padding-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="width:18px;height:18px;border-radius:50%;background:#F5D96B;border:1px solid #E2C453"></div>
+      <div style="font-size:14px;font-weight:500">Built on Celo</div>
+      <div style="font-size:14px;color:#5F6878;flex:1;min-width:220px">Celo is the settlement network underneath PrivyPay. Payments settle in supported stablecoins.</div>
+    </div>
+  </div>
+
+  <div style="max-width:1160px;margin:0 auto;padding:0 24px clamp(48px,6vw,86px)">
+    <div style="animation:pp-up .62s cubic-bezier(.2,.8,.3,1) 0ms both;background:#0E1420;border-radius:20px;padding:clamp(38px,5.6vw,70px) clamp(26px,4vw,54px);color:#fff">
+      <h2 style="font-size:clamp(30px,4.6vw,48px);letter-spacing:-.042em;font-weight:600;margin:0;line-height:1.05;max-width:600px">Your payment agent, wherever you work.</h2>
+      <p style="font-size:16px;color:#A3ACBC;line-height:1.65;margin:18px 0 28px;max-width:440px">Create your account, pick a username, and start moving stablecoins on Celo with an instruction.</p>
+      <button onClick="{{ enterApp }}" style="border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:14px 24px;border-radius:11px;cursor:pointer;transition:background .16s ease,transform .16s ease" style-hover="background:#2E56E4;transform:translateY(-1px)" style-active="transform:translateY(0) scale(.99)">Get started</button>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #EDEFF3">
+    <div style="max-width:1160px;margin:0 auto;padding:30px 24px 46px;display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+      <div style="min-width:220px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:18px;height:18px;border-radius:6px;background:#1B45D7"></div>
+          <span style="font-size:15px;font-weight:600;letter-spacing:-.02em">PrivyPay</span>
+        </div>
+        <div style="font-size:13.5px;color:#5F6878;margin-top:8px">Your payment agent, wherever you work.</div>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-left:auto">
+        <a href="#agent" style="font-size:13.5px;color:#5B6472">Agent</a>
+        <a href="#product" style="font-size:13.5px;color:#5B6472">Usernames</a>
+        <a href="#how" style="font-size:13.5px;color:#5B6472">How it works</a>
+        <a href="#connected" style="font-size:13.5px;color:#5B6472">Connected</a>
+        <a href="#security" style="font-size:13.5px;color:#5B6472">Security</a>
+      </div>
+      <div style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#6C7484;letter-spacing:.1em;width:100%">BUILT ON CELO</div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Sign up" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px">
+  <div style="width:100%;max-width:400px;animation:pp-up .4s cubic-bezier(.2,.8,.3,1) both">
+    <div onClick="{{ goLanding }}" style="display:flex;align-items:center;gap:9px;cursor:pointer">
+      <div style="width:20px;height:20px;border-radius:6px;background:#1B45D7"></div>
+      <span style="font-size:15px;font-weight:600;letter-spacing:-.02em">PrivyPay</span>
+    </div>
+    <h1 style="font-size:27px;letter-spacing:-.03em;font-weight:600;margin:26px 0 0">Create your account</h1>
+    <p style="font-size:15px;color:#5B6472;line-height:1.6;margin:10px 0 24px">{{ authSub }}</p>
+
+    <sc-if value="{{ authWelcome }}" hint-placeholder-val="{{ true }}">
+    <div>
+      <button onClick="{{ usePasskey }}" style="width:100%;border:none;background:#0E1420;color:#fff;font-size:15px;font-weight:500;padding:14px;border-radius:11px;cursor:pointer;transition:background .16s ease" style-hover="background:#1B45D7">{{ passkeyLabel }}</button>
+      <button onClick="{{ goEmail }}" style="width:100%;margin-top:10px;border:1px solid #DCE0E7;background:#fff;font-size:15px;font-weight:500;padding:13px;border-radius:11px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">Continue with email</button>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ authEmail }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <input value="{{ email }}" onChange="{{ onEmail }}" onKeyDown="{{ onEmailKey }}" placeholder="you@email.com" style="width:100%;border:1px solid #DCE0E7;background:#fff;border-radius:11px;padding:13px 15px;font-size:15px;outline:none;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+      <button onClick="{{ sendCode }}" style="width:100%;margin-top:12px;border:none;background:#0E1420;color:#fff;font-size:15px;font-weight:500;padding:14px;border-radius:11px;cursor:pointer;opacity:{{ emailOpacity }};transition:background .16s ease,opacity .16s ease" style-hover="background:#1B45D7">Send code</button>
+      <button onClick="{{ backToWelcome }}" style="width:100%;margin-top:10px;border:none;background:transparent;color:#5F6878;font-size:13.5px;padding:8px;cursor:pointer">Back</button>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ authCode }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <input value="{{ code }}" onChange="{{ onCode }}" onKeyDown="{{ onCodeKey }}" placeholder="6-digit code" style="width:100%;border:1px solid #DCE0E7;background:#fff;border-radius:11px;padding:13px 15px;font-size:17px;font-family:'Geist Mono',monospace;letter-spacing:.28em;outline:none;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+      <div style="font-size:12.5px;color:#5F6878;margin-top:10px">Sent to {{ codeTarget }}</div>
+      <button onClick="{{ verifyCode }}" style="width:100%;margin-top:12px;border:none;background:#0E1420;color:#fff;font-size:15px;font-weight:500;padding:14px;border-radius:11px;cursor:pointer;transition:background .16s ease" style-hover="background:#1B45D7">Verify</button>
+      <button onClick="{{ backToWelcome }}" style="width:100%;margin-top:10px;border:none;background:transparent;color:#5F6878;font-size:13.5px;padding:8px;cursor:pointer">Start over</button>
+    </div>
+    </sc-if>
+
+    <div style="font-size:12.5px;color:#6C7484;text-align:center;margin-top:20px;line-height:1.6">Your Celo payment wallet is provisioned with your account.</div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Onboarding" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px">
+  <div style="width:100%;max-width:420px;animation:pp-up .4s cubic-bezier(.2,.8,.3,1) both">
+
+    <sc-if value="{{ obUsername }}" hint-placeholder-val="{{ true }}">
+    <div>
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6C7484">STEP 2 OF 3</div>
+      <h1 style="font-size:27px;letter-spacing:-.03em;font-weight:600;margin:14px 0 0">Choose your username.</h1>
+      <p style="font-size:15px;color:#5B6472;line-height:1.6;margin:10px 0 22px">This is how people send you money.</p>
+      <div style="background:#fff;border:1px solid #DCE0E7;border-radius:11px;padding:13px 15px;display:flex;align-items:center;gap:8px">
+        <span style="font-family:'Geist Mono',monospace;font-size:16px;color:#6C7484">@</span>
+        <input value="{{ handleInput }}" onChange="{{ onHandle }}" onKeyDown="{{ onHandleKey }}" placeholder="chris" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:17px;font-weight:500;letter-spacing:-.01em">
+        <sc-if value="{{ handleOk }}" hint-placeholder-val="{{ true }}">
+        <span style="font-size:12.5px;font-weight:500;color:#167A54;white-space:nowrap;animation:pp-pop .28s cubic-bezier(.2,.8,.3,1) both">✓ Available</span>
+        </sc-if>
+      </div>
+      <button onClick="{{ createWallet }}" style="width:100%;margin-top:14px;border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:14px;border-radius:11px;cursor:pointer;opacity:{{ handleOpacity }};transition:background .16s ease,opacity .16s ease" style-hover="background:#153AB4" style-active="transform:scale(.99)">Continue</button>
+      <div style="font-size:12.5px;color:#6C7484;margin-top:16px;line-height:1.6">Your Celo payment wallet is created automatically — nothing to install or connect.</div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ obCreating }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:28px">
+      <div style="font-size:18px;font-weight:600;letter-spacing:-.02em">Setting up your payment wallet…</div>
+      <div style="display:grid;gap:14px;margin-top:20px">
+        <sc-for list="{{ setupSteps }}" as="st" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:11px;font-size:14.5px">
+            <span style="width:20px;height:20px;border-radius:50%;background:{{ st.bg }};color:{{ st.color }};font-size:11px;display:flex;align-items:center;justify-content:center;flex:none">{{ st.mark }}</span>
+            <span style="color:{{ st.textColor }}">{{ st.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:22px;height:3px;border-radius:999px;background:#EDEFF3;overflow:hidden">
+        <div style="height:100%;background:#1B45D7;border-radius:999px;width:{{ setupProgress }};transition:width .4s cubic-bezier(.3,.8,.3,1)"></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ obReady }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <h1 style="font-size:27px;letter-spacing:-.03em;font-weight:600;margin:0">Your wallet is ready.</h1>
+      <p style="font-size:15px;color:#5B6472;line-height:1.6;margin:10px 0 22px">You can send, receive and request money right away.</p>
+      <div style="background:#0E1420;border-radius:16px;padding:26px;color:#fff">
+        <div style="font-size:24px;font-weight:600;letter-spacing:-.025em">{{ handleDisplay }}</div>
+        <div style="height:1px;background:#212938;margin:20px 0"></div>
+        <div style="font-size:12.5px;color:#A3ACBC">Celo payment wallet</div>
+        <div style="font-family:'Geist Mono',monospace;font-size:16px;margin-top:6px">0x8A…29F</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:14px">
+          <span style="width:6px;height:6px;border-radius:50%;background:#3FBF85;display:inline-block"></span>
+          <span style="font-size:13px;color:#A3ACBC">Wallet ready</span>
+        </div>
+      </div>
+      <button onClick="{{ finishOnboarding }}" style="width:100%;margin-top:16px;border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:14px;border-radius:11px;cursor:pointer;transition:background .16s ease" style-hover="background:#153AB4" style-active="transform:scale(.99)">Start using PrivyPay</button>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;min-height:100vh">
+
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+  <div style="width:238px;flex:none;border-right:1px solid #E8EAEF;background:#FBFBFC;padding:20px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto">
+    <div onClick="{{ goLanding }}" style="display:flex;align-items:center;gap:9px;padding:0 8px 16px;cursor:pointer">
+      <div style="width:20px;height:20px;border-radius:6px;background:#1B45D7"></div>
+      <span style="font-size:15px;font-weight:600;letter-spacing:-.02em">PrivyPay</span>
+    </div>
+    <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="4">
+      <div style="margin-bottom:14px">
+        <sc-if value="{{ g.hasLabel }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6C7484;padding:0 10px 7px">{{ g.label }}</div>
+        </sc-if>
+        <div style="display:grid;gap:2px">
+          <sc-for list="{{ g.items }}" as="n" hint-placeholder-count="6">
+            <div onClick="{{ n.onClick }}" tabIndex="0" onKeyDown="{{ n.onKey }}" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:14px;background:{{ n.bg }};outline:none;transition:background .16s ease" style-hover="background:#F0F1F4">
+              <span style="width:6px;height:6px;border-radius:50%;background:{{ n.dot }};flex:none;transition:background .2s ease"></span>
+              <span style="color:{{ n.color }};font-weight:{{ n.weight }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+    <div style="margin-top:auto;border:1px solid #E4E7EC;border-radius:12px;padding:13px;background:#fff">
+      <div style="font-size:13.5px;font-weight:600">{{ handleDisplay }}</div>
+      <div style="display:flex;align-items:center;gap:7px;margin-top:7px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#167A54;display:inline-block"></span>
+        <span style="font-size:12px;color:#5B6472">Wallet ready</span>
+      </div>
+      <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5F6878;margin-top:6px">0x8A…29F</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="flex:1;min-width:0;padding-bottom:{{ mainPadBottom }}">
+    <div style="border-bottom:1px solid #E8EAEF;background:rgba(246,247,249,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20">
+      <div style="max-width:1020px;margin:0 auto;padding:15px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px">
+          <div style="font-size:19px;font-weight:600;letter-spacing:-.025em">{{ pageHeading }}</div>
+          <div style="font-size:13px;color:#5F6878;margin-top:2px">{{ pageSub }}</div>
+        </div>
+        <button onClick="{{ openSend }}" style="border:none;background:#1B45D7;color:#fff;font-size:14px;font-weight:500;padding:10px 16px;border-radius:10px;cursor:pointer;transition:background .16s ease" style-hover="background:#153AB4" style-active="transform:scale(.985)">Send</button>
+        <button onClick="{{ openReceive }}" style="border:1px solid #DCE0E7;background:#fff;font-size:14px;font-weight:500;padding:10px 16px;border-radius:10px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">Receive</button>
+      </div>
+    </div>
+
+    <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Overview" style="max-width:1020px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:18px;padding:clamp(18px,2.4vw,24px);box-shadow:0 28px 56px -42px rgba(14,20,32,.32)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:9px">
+            <div style="width:22px;height:22px;border-radius:7px;background:#1B45D7"></div>
+            <span style="font-size:14.5px;font-weight:600;letter-spacing:-.015em">PrivyPay agent</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #DDE3F6;background:#F4F6FE;border-radius:999px;padding:5px 11px">
+            <span style="width:5px;height:5px;border-radius:50%;background:#1B45D7;display:inline-block;animation:pp-pulse 1.6s ease-in-out infinite"></span>
+            <span style="font-size:11.5px;font-weight:500;color:#153AB4">{{ cmdStateLabel }}</span>
+          </div>
+        </div>
+        <div style="font-size:clamp(19px,2.2vw,23px);font-weight:600;letter-spacing:-.028em;margin-top:16px">What would you like to do?</div>
+        <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">
+          <input value="{{ cmdInput }}" onChange="{{ onCmdInput }}" onKeyDown="{{ onCmdKey }}" placeholder="Send $20 to @sarah" style="flex:1;min-width:190px;border:1px solid #DCE0E7;background:#fff;border-radius:11px;padding:13px 15px;font-size:15px;outline:none;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+          <button onClick="{{ runCmd }}" style="border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:13px;border-radius:11px;cursor:pointer;transition:background .16s ease,transform .16s ease;padding:13px 20px" style-hover="background:#153AB4;transform:translateY(-1px)" style-active="transform:translateY(0) scale(.99)">Run</button>
+        </div>
+        <sc-if value="{{ cmdIdle }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
+          <sc-for list="{{ cmdSuggestions }}" as="sg" hint-placeholder-count="4">
+            <div onClick="{{ sg.onClick }}" tabIndex="0" onKeyDown="{{ sg.onKey }}" style="font-size:13px;color:#153AB4;border:1px solid #DDE3F6;background:#F4F6FE;border-radius:9px;padding:8px 12px;cursor:pointer;outline:none;transition:background .16s ease,transform .16s ease" style-hover="background:#E7EDFC;transform:translateY(-1px)">{{ sg.label }}</div>
+          </sc-for>
+        </div>
+        </sc-if>
+        <sc-if value="{{ cmdWorking }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;border:1px solid #EDEFF3;background:#FBFBFD;border-radius:14px;padding:16px;animation:pp-fade .2s ease both">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="position:relative;width:16px;height:16px;display:inline-block;flex:none"><span style="position:absolute;inset:0;border-radius:50%;border:2px solid #E4E8F6;border-top-color:#1B45D7;animation:pp-spin .8s linear infinite"></span></span>
+            <span style="font-size:14px;font-weight:500">{{ cmdStatusLabel }}</span>
+          </div>
+          <div style="display:grid;gap:9px;margin-top:13px">
+            <sc-for list="{{ cmdSteps }}" as="st" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;animation:pp-step .3s cubic-bezier(.2,.8,.3,1) both">
+                <span style="width:18px;height:18px;border-radius:50%;background:{{ st.bg }};color:{{ st.color }};font-size:10px;display:flex;align-items:center;justify-content:center;flex:none">{{ st.mark }}</span>
+                <span style="color:{{ st.textColor }}">{{ st.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ cmdAnswer }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;border:1px solid #EDEFF3;border-radius:14px;padding:17px;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both">
+          <div style="font-size:13px;color:#5F6878">{{ cmdAnswerLabel }}</div>
+          <div style="font-size:clamp(21px,2.5vw,27px);font-weight:600;letter-spacing:-.032em;margin-top:5px;font-variant-numeric:tabular-nums;text-wrap:pretty">{{ cmdAnswerValue }}</div>
+          <div style="display:grid;gap:11px;margin-top:15px">
+            <sc-for list="{{ cmdAnswerRows }}" as="a" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;font-size:13.5px;flex-wrap:wrap">
+                <span style="font-weight:600">{{ a.handle }}</span>
+                <span style="color:#5F6878">{{ a.sub }}</span>
+                <span style="margin-left:auto;font-weight:600;color:{{ a.color }};font-variant-numeric:tabular-nums">{{ a.amount }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ cmdReset }}" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease;margin-top:15px;padding:10px 16px">New instruction</button>
+        </div>
+        </sc-if>
+        <sc-if value="{{ cmdPreview }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;border:1px solid #DDE3F6;background:#FCFCFE;border-radius:14px;padding:17px;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both">
+          <div style="font-size:13px;color:#5F6878">{{ cmdPreviewTitle }}</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:13px;flex-wrap:wrap">
+            <div style="width:36px;height:36px;border-radius:50%;background:#EDF1FE;color:#1B45D7;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none">{{ cmdInitial }}</div>
+            <div style="min-width:0">
+              <div style="font-size:16px;font-weight:600;letter-spacing:-.018em">{{ cmdHandle }}</div>
+              <div style="font-size:12.5px;color:#5F6878;margin-top:1px">{{ cmdName }}</div>
+            </div>
+            <div style="margin-left:auto;font-size:24px;font-weight:600;letter-spacing:-.035em;font-variant-numeric:tabular-nums">${{ cmdAmountStr }}</div>
+          </div>
+          <div style="display:grid;gap:10px;margin-top:15px;padding-top:14px;border-top:1px solid #EDEFF3">
+            <sc-for list="{{ cmdMetaRows }}" as="m" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;gap:14px;font-size:13.5px"><span style="color:#5F6878">{{ m.label }}</span><span style="font-weight:500;text-align:right">{{ m.value }}</span></div>
+          </sc-for>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:17px;flex-wrap:wrap">
+            <button onClick="{{ cmdConfirm }}" style="border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:13px;border-radius:11px;cursor:pointer;transition:background .16s ease,transform .16s ease;flex:1;min-width:170px" style-hover="background:#153AB4;transform:translateY(-1px)" style-active="transform:translateY(0) scale(.99)">{{ cmdConfirmLabel }}</button>
+            <button onClick="{{ cmdReset }}" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease;padding:13px 20px" style-hover="border-color:#0E1420">Cancel</button>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ cmdProcessing }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;border:1px solid #EDEFF3;border-radius:14px;padding:34px 17px;text-align:center;animation:pp-fade .2s ease both">
+          <div style="position:relative;width:44px;height:44px;margin:0 auto"><div style="position:absolute;inset:0;border-radius:50%;border:2px solid #EDEFF3;border-top-color:#1B45D7;animation:pp-spin .9s linear infinite"></div></div>
+          <div style="font-size:16px;font-weight:600;margin-top:18px;letter-spacing:-.018em">Sending payment</div>
+          <div style="font-size:13.5px;color:#5F6878;margin-top:6px">Submitting to Celo</div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ cmdDone }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;border:1px solid #EDEFF3;border-radius:14px;padding:18px;animation:pp-step .32s cubic-bezier(.2,.8,.3,1) both">
+          <div style="display:flex;align-items:center;gap:11px">
+            <span style="width:30px;height:30px;border-radius:50%;background:#1B45D7;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none;animation:pp-pop .34s cubic-bezier(.2,.8,.3,1) both">✓</span>
+            <div style="font-size:15.5px;font-weight:600;letter-spacing:-.015em">{{ cmdDoneTitle }}</div>
+          </div>
+          <div style="font-size:clamp(26px,3vw,33px);font-weight:600;letter-spacing:-.038em;margin-top:15px;font-variant-numeric:tabular-nums">${{ cmdAmountStr }} <span style="font-family:'Geist Mono',monospace;font-size:13px;font-weight:400;color:#5F6878">USDC</span></div>
+          <div style="display:grid;gap:10px;margin-top:15px;padding-top:14px;border-top:1px solid #F0F1F4">
+            <sc-for list="{{ cmdReceiptRows }}" as="m" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;gap:14px;font-size:13.5px"><span style="color:#5F6878">{{ m.label }}</span><span style="font-weight:500;text-align:right">{{ m.value }}</span></div>
+          </sc-for>
+          </div>
+          <button onClick="{{ cmdReset }}" style="border:1px solid #DCE0E7;background:#fff;color:#0E1420;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease;margin-top:16px;padding:11px 18px">New instruction</button>
+        </div>
+        </sc-if>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;align-items:start;margin-top:16px">
+        <div style="background:#0E1420;border-radius:16px;padding:26px;color:#fff">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:13px;color:#A3ACBC">Total balance</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#8FE0BA"><span style="width:5px;height:5px;border-radius:50%;background:#3FBF85;display:inline-block"></span>Wallet ready</div>
+          </div>
+          <div style="font-size:clamp(36px,4.6vw,50px);font-weight:600;letter-spacing:-.04em;margin-top:8px;font-variant-numeric:tabular-nums">${{ balanceStr }}</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:8px">
+            <span style="font-family:'Geist Mono',monospace;font-size:12px;color:#A3ACBC">USDC</span>
+            <span style="font-family:'Geist Mono',monospace;font-size:12px;color:#A3ACBC">CELO</span>
+            <span style="font-size:12.5px;color:#8FE0BA">{{ balanceChange }}</span>
+          </div>
+          <div style="margin-top:20px">{{ balanceChart }}</div>
+          <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
+            <button onClick="{{ openSend }}" style="flex:1;min-width:118px;border:none;background:#1B45D7;color:#fff;font-size:14.5px;font-weight:500;padding:12px;border-radius:10px;cursor:pointer;transition:background .16s ease" style-hover="background:#2E56E4">Send</button>
+            <button onClick="{{ openReceive }}" style="flex:1;min-width:118px;border:1px solid #2A3140;background:transparent;color:#fff;font-size:14.5px;font-weight:500;padding:12px;border-radius:10px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#6B7485">Receive</button>
+          </div>
+        </div>
+
+        <div style="display:grid;gap:16px">
+          <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:8px">
+            <sc-for list="{{ quickActions }}" as="q" hint-placeholder-count="4">
+              <div onClick="{{ q.onClick }}" tabIndex="0" onKeyDown="{{ q.onKey }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;outline:none;transition:background .16s ease" style-hover="background:#F6F7F9">
+                <span style="width:30px;height:30px;border-radius:9px;background:#EDF1FE;color:#1B45D7;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none">{{ q.icon }}</span>
+                <span style="font-size:14.5px;font-weight:500">{{ q.label }}</span>
+                <span style="margin-left:auto;color:#C3C9D2;font-size:13px">→</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:20px">
+            <div style="font-size:13px;color:#5F6878">Next recurring payment</div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px">
+              <div style="font-size:22px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums">$200.00</div>
+              <div style="font-size:14px;color:#5B6472">to @designer</div>
+            </div>
+            <div style="font-size:13px;color:#5F6878;margin-top:6px">Friday, Sep 18 · every Friday</div>
+            <div style="display:flex;gap:16px;margin-top:16px;padding-top:16px;border-top:1px solid #F0F1F4">
+              <div style="flex:1">
+                <div style="font-size:12px;color:#5F6878">Sent this month</div>
+                <div style="font-size:16px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums">${{ sentMonth }}</div>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:12px;color:#5F6878">Received</div>
+                <div style="font-size:16px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums">${{ receivedMonth }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:15px;font-weight:600">Recent activity</div>
+        <div onClick="{{ goActivity }}" tabIndex="0" onKeyDown="{{ goActivityKey }}" style="font-size:13.5px;color:#1B45D7;cursor:pointer">View all</div>
+      </div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;margin-top:12px;overflow:hidden">
+        <sc-for list="{{ recentTxs }}" as="t" hint-placeholder-count="4">
+          <div onClick="{{ t.onClick }}" tabIndex="0" onKeyDown="{{ t.onKey }}" style="display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid #F0F1F4;cursor:pointer;outline:none;transition:background .16s ease" style-hover="background:#FBFBFC">
+            <div style="width:34px;height:34px;border-radius:50%;background:{{ t.avatarBg }};color:{{ t.avatarColor }};font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none">{{ t.initial }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14.5px;font-weight:600">{{ t.handle }}</div>
+              <div style="font-size:12.5px;color:#5F6878;margin-top:2px">{{ t.sub }}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:14.5px;font-weight:600;color:{{ t.amountColor }};font-variant-numeric:tabular-nums">{{ t.amountStr }}</div>
+              <div style="font-size:12px;color:#5F6878;margin-top:2px">{{ t.status }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isPayments }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Payments" style="max-width:1020px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <sc-for list="{{ filters }}" as="fl" hint-placeholder-count="5">
+          <div onClick="{{ fl.onClick }}" tabIndex="0" onKeyDown="{{ fl.onKey }}" style="font-size:13.5px;font-weight:500;padding:8px 14px;border-radius:9px;cursor:pointer;outline:none;border:1px solid {{ fl.border }};background:{{ fl.bg }};color:{{ fl.color }};transition:border-color .16s ease,background .16s ease">{{ fl.label }}</div>
+        </sc-for>
+      </div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;margin-top:16px;overflow:hidden">
+        <sc-for list="{{ filteredTxs }}" as="t" hint-placeholder-count="5">
+          <div onClick="{{ t.onClick }}" tabIndex="0" onKeyDown="{{ t.onKey }}" style="display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid #F0F1F4;cursor:pointer;outline:none;transition:background .16s ease" style-hover="background:#FBFBFC">
+            <div style="width:34px;height:34px;border-radius:50%;background:{{ t.avatarBg }};color:{{ t.avatarColor }};font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none">{{ t.initial }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14.5px;font-weight:600">{{ t.handle }}</div>
+              <div style="font-size:12.5px;color:#5F6878;margin-top:2px">{{ t.sub }}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:14.5px;font-weight:600;color:{{ t.amountColor }};font-variant-numeric:tabular-nums">{{ t.amountStr }}</div>
+              <div style="font-size:12px;color:#5F6878;margin-top:2px">{{ t.status }}</div>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noTxs }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:38px 20px;text-align:center">
+          <div style="font-size:14.5px;font-weight:600">Nothing here yet</div>
+          <div style="font-size:13.5px;color:#5F6878;margin-top:6px">Payments matching this filter will show up here.</div>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isRequests }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Requests" style="max-width:1020px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:22px">
+        <sc-if value="{{ reqFormOpen }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-size:15px;font-weight:600">Request payment</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-top:14px">
+            <div>
+              <div style="font-size:12px;color:#5F6878;margin-bottom:6px">From</div>
+              <input value="{{ reqTo }}" onChange="{{ onReqTo }}" placeholder="@mike" style="width:100%;border:1px solid #DCE0E7;background:#fff;border-radius:10px;padding:11px 13px;font-size:14.5px;outline:none;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+            </div>
+            <div>
+              <div style="font-size:12px;color:#5F6878;margin-bottom:6px">Amount</div>
+              <input value="{{ reqAmount }}" onChange="{{ onReqAmount }}" placeholder="250" style="width:100%;border:1px solid #DCE0E7;background:#fff;border-radius:10px;padding:11px 13px;font-size:14.5px;outline:none;font-variant-numeric:tabular-nums;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+            </div>
+            <div>
+              <div style="font-size:12px;color:#5F6878;margin-bottom:6px">For</div>
+              <input value="{{ reqNote }}" onChange="{{ onReqNote }}" placeholder="Logo design" style="width:100%;border:1px solid #DCE0E7;background:#fff;border-radius:10px;padding:11px 13px;font-size:14.5px;outline:none;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+            </div>
+          </div>
+          <button onClick="{{ createRequest }}" style="margin-top:14px;border:none;background:#1B45D7;color:#fff;font-size:14.5px;font-weight:500;padding:12px 20px;border-radius:10px;cursor:pointer;opacity:{{ reqOpacity }};transition:background .16s ease,opacity .16s ease" style-hover="background:#153AB4" style-active="transform:scale(.99)">Create request</button>
+        </div>
+        </sc-if>
+        <sc-if value="{{ reqDone }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:pp-sheet .28s cubic-bezier(.2,.8,.3,1) both">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:28px;height:28px;border-radius:50%;background:#EDF1FE;color:#1B45D7;font-size:13px;display:flex;align-items:center;justify-content:center;animation:pp-pop .3s cubic-bezier(.2,.8,.3,1) both">✓</span>
+            <div style="font-size:15px;font-weight:600">Request sent</div>
+          </div>
+          <div style="display:grid;gap:10px;margin-top:18px;max-width:360px">
+            <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5F6878">From</span><span style="font-weight:600">{{ sentReqTo }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5F6878">Amount</span><span style="font-weight:600;font-variant-numeric:tabular-nums">${{ sentReqAmount }} USDC</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5F6878">For</span><span style="font-weight:500">{{ sentReqNote }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#5F6878">Status</span><span style="font-weight:500;color:#8A6A1E">Pending</span></div>
+          </div>
+          <button onClick="{{ newRequest }}" style="margin-top:16px;border:1px solid #DCE0E7;background:#fff;font-size:14px;font-weight:500;padding:11px 18px;border-radius:10px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">New request</button>
+        </div>
+        </sc-if>
+      </div>
+
+      <div style="font-size:15px;font-weight:600;margin:24px 0 12px">Open requests</div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;overflow:hidden">
+        <sc-for list="{{ requestRows }}" as="r" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid #F0F1F4;flex-wrap:wrap">
+            <div style="width:34px;height:34px;border-radius:50%;background:#F1F2F5;color:#5B6472;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none">{{ r.initial }}</div>
+            <div style="flex:1;min-width:120px">
+              <div style="font-size:14.5px;font-weight:600">{{ r.handle }}</div>
+              <div style="font-size:12.5px;color:#5F6878;margin-top:2px">{{ r.note }}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums">${{ r.amount }}</div>
+              <div style="font-size:12px;color:{{ r.statusColor }};margin-top:2px">{{ r.status }}</div>
+            </div>
+            <sc-if value="{{ r.payable }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ r.onPay }}" style="border:none;background:#1B45D7;color:#fff;font-size:13.5px;font-weight:500;padding:9px 14px;border-radius:9px;cursor:pointer;flex:none;transition:background .16s ease" style-hover="background:#153AB4">Pay</button>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isContacts }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Contacts" style="max-width:1020px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <input value="{{ contactQuery }}" onChange="{{ onContactQuery }}" placeholder="Search by username or name" style="width:100%;max-width:340px;border:1px solid #DCE0E7;background:#fff;border-radius:10px;padding:11px 14px;font-size:14.5px;outline:none;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(256px,1fr));gap:12px;margin-top:16px">
+        <sc-for list="{{ contactRows }}" as="c" hint-placeholder-count="4">
+          <div style="background:#fff;border:1px solid #E4E7EC;border-radius:14px;padding:18px;transition:transform .18s ease,box-shadow .18s ease" style-hover="transform:translateY(-3px);box-shadow:0 18px 36px -28px rgba(14,20,32,.32)">
+            <div style="display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;border-radius:50%;background:#EDF1FE;color:#1B45D7;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center">{{ c.initial }}</div>
+              <div style="min-width:0">
+                <div style="font-size:15px;font-weight:600;letter-spacing:-.01em">{{ c.handle }}</div>
+                <div style="font-size:12.5px;color:#5F6878;margin-top:1px">{{ c.name }}</div>
+              </div>
+            </div>
+            <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#6C7484;margin-top:14px">{{ c.address }}</div>
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button onClick="{{ c.onSend }}" style="flex:1;border:none;background:#0E1420;color:#fff;font-size:13.5px;font-weight:500;padding:10px;border-radius:9px;cursor:pointer;transition:background .16s ease" style-hover="background:#1B45D7">Send</button>
+              <button onClick="{{ c.onRequest }}" style="flex:1;border:1px solid #DCE0E7;background:#fff;font-size:13.5px;font-weight:500;padding:10px;border-radius:9px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">Request</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ noContacts }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:14px;padding:38px;text-align:center;margin-top:16px">
+        <div style="font-size:14.5px;font-weight:600">No matches</div>
+        <div style="font-size:13.5px;color:#5F6878;margin-top:6px">Try another username.</div>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isRecurring }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Recurring" style="max-width:1020px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;overflow:hidden">
+        <sc-for list="{{ recurringRows }}" as="r" hint-placeholder-count="2">
+          <div style="padding:20px;border-bottom:1px solid #F0F1F4;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div style="flex:1;min-width:170px">
+              <div style="font-size:16px;font-weight:600;letter-spacing:-.015em">{{ r.handle }}</div>
+              <div style="font-size:13px;color:#5F6878;margin-top:3px">{{ r.cadence }} · next {{ r.next }}</div>
+            </div>
+            <div style="font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">${{ r.amount }}</div>
+            <div style="display:flex;align-items:center;gap:7px;min-width:92px">
+              <span style="width:6px;height:6px;border-radius:50%;background:{{ r.statusDot }};display:inline-block"></span>
+              <span style="font-size:13px;color:{{ r.statusColor }}">{{ r.statusLabel }}</span>
+            </div>
+            <button onClick="{{ r.onToggle }}" style="border:1px solid #DCE0E7;background:#fff;font-size:13.5px;font-weight:500;padding:9px 15px;border-radius:9px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">{{ r.action }}</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isWallet }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Wallet" style="max-width:720px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <div style="background:#0E1420;border-radius:16px;padding:28px;color:#fff">
+        <div style="font-size:12.5px;color:#A3ACBC">Payment wallet</div>
+        <div style="font-size:26px;font-weight:600;letter-spacing:-.03em;margin-top:6px">{{ handleDisplay }}</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:12px">
+          <span style="width:6px;height:6px;border-radius:50%;background:#3FBF85;display:inline-block"></span>
+          <span style="font-size:13px;color:#A3ACBC">Active · Celo</span>
+        </div>
+        <div style="font-family:'Geist Mono',monospace;font-size:15px;margin-top:8px;color:#D3D8E0">0x8A…29F</div>
+        <div style="height:1px;background:#212938;margin:22px 0"></div>
+        <div style="font-size:13px;color:#A3ACBC">Balance</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px"><div style="font-size:34px;font-weight:600;letter-spacing:-.035em;font-variant-numeric:tabular-nums">${{ balanceStr }}</div><div style="font-family:'Geist Mono',monospace;font-size:13px;color:#A3ACBC">USDC</div></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+        <button onClick="{{ copyAddress }}" style="flex:1;min-width:140px;border:1px solid #DCE0E7;background:#fff;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">{{ copyLabel }}</button>
+        <button onClick="{{ openReceive }}" style="flex:1;min-width:140px;border:none;background:#1B45D7;color:#fff;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:background .16s ease" style-hover="background:#153AB4">Receive</button>
+        <button onClick="{{ goActivity }}" style="flex:1;min-width:140px;border:1px solid #DCE0E7;background:#fff;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">View activity</button>
+      </div>
+      <div style="border:1px solid #E4E7EC;background:#fff;border-radius:16px;padding:20px;margin-top:16px">
+        <div style="font-size:13.5px;font-weight:600">Provisioned with your account</div>
+        <p style="font-size:13.5px;color:#5B6472;line-height:1.6;margin:8px 0 0">Your Celo payment wallet was created when you chose {{ handleDisplay }}. There is nothing to install or connect. Your username is your identity; this address is where stablecoins settle.</p>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isConnected }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Connected services" style="max-width:1020px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:12px">
+        <sc-for list="{{ serviceRows }}" as="sv" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:22px;display:flex;flex-direction:column;transition:transform .18s ease,box-shadow .18s ease" style-hover="transform:translateY(-3px);box-shadow:0 18px 36px -28px rgba(14,20,32,.3)">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:38px;height:38px;border-radius:11px;background:{{ sv.markBg }};border:1px solid {{ sv.markBorder }};display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none">
+                <sc-if value="{{ sv.isChatgpt }}" hint-placeholder-val="{{ false }}"><img src="assets/logo-chatgpt.png" alt="ChatGPT" style="width:24px;height:24px;object-fit:contain" /></sc-if>
+                <sc-if value="{{ sv.isClaude }}" hint-placeholder-val="{{ false }}"><img src="assets/logo-claude.png" alt="Claude" style="width:24px;height:24px;border-radius:6px;object-fit:contain" /></sc-if>
+                <sc-if value="{{ sv.isWhatsapp }}" hint-placeholder-val="{{ false }}"><img src="assets/logo-whatsapp.png" alt="WhatsApp" style="width:24px;height:24px;object-fit:contain" /></sc-if>
+              </div>
+              <div style="min-width:0">
+                <div style="font-size:15.5px;font-weight:600;letter-spacing:-.015em">{{ sv.name }}</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+                  <span style="width:5px;height:5px;border-radius:50%;background:{{ sv.dot }};display:inline-block"></span>
+                  <span style="font-size:12.5px;color:{{ sv.stateColor }}">{{ sv.stateLabel }}</span>
+                </div>
+              </div>
+            </div>
+            <p style="font-size:13.5px;color:#5B6472;line-height:1.6;margin:14px 0 18px">{{ sv.desc }}</p>
+            <button onClick="{{ sv.onToggle }}" style="margin-top:auto;width:100%;border:1px solid {{ sv.ctaBorder }};background:{{ sv.ctaBg }};color:{{ sv.ctaColor }};font-size:14px;font-weight:500;padding:11px;border-radius:10px;cursor:pointer;transition:background .16s ease,border-color .16s ease" style-hover="border-color:#0E1420">{{ sv.ctaLabel }}</button>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:22px;margin-top:16px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="font-size:15px;font-weight:600">Agent tools</div>
+          <span style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#153AB4;background:#F4F6FE;border:1px solid #DDE3F6;padding:4px 8px;border-radius:7px">MCP</span>
+        </div>
+        <p style="font-size:13.5px;color:#5B6472;line-height:1.6;margin:8px 0 0;max-width:620px">Connected services reach your account through these tools. Reads happen on request; anything that moves money is prepared and handed back to you to confirm.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:8px;margin-top:16px">
+          <sc-for list="{{ mcpTools }}" as="t" hint-placeholder-count="8">
+            <div style="border:1px solid #EDEFF3;border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px">
+              <span style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#153AB4">{{ t.name }}</span>
+              <span style="margin-left:auto;font-size:11.5px;color:{{ t.color }};white-space:nowrap">{{ t.mode }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:22px;margin-top:16px">
+        <div style="font-size:15px;font-weight:600">How connected services work</div>
+        <p style="font-size:13.5px;color:#5B6472;line-height:1.6;margin:8px 0 0;max-width:620px">A connected service can start a payment or a request on your behalf. PrivyPay always shows you the recipient, amount, network and fee, and the payment is only submitted to Celo after you confirm it here.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:16px">
+          <sc-for list="{{ connectedLimits }}" as="cl" hint-placeholder-count="3">
+            <div style="border:1px solid #EDEFF3;border-radius:11px;padding:14px">
+              <div style="font-size:12px;color:#5F6878">{{ cl.label }}</div>
+              <div style="font-size:15px;font-weight:600;margin-top:5px">{{ cl.value }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isPrivacy }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Privacy" style="max-width:860px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div style="min-width:220px">
+            <div style="font-size:17px;font-weight:600">Privacy mode</div>
+            <div style="font-size:13.5px;color:#5F6878;margin-top:4px">Applies your privacy defaults to every new payment.</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-family:'Geist Mono',monospace;font-size:13px;font-weight:500;color:{{ privacyColor }}">{{ privacyLabel }}</span>
+            <div onClick="{{ togglePrivacy }}" tabIndex="0" onKeyDown="{{ privacyKey }}" style="width:48px;height:28px;border-radius:999px;background:{{ privacyToggleBg }};position:relative;cursor:pointer;outline:none;transition:background .2s ease">
+              <div style="width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:3px;left:{{ privacyKnobLeft }};transition:left .2s cubic-bezier(.3,.8,.3,1)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:6px 24px;margin-top:16px">
+        <sc-for list="{{ privacyRows }}" as="p" hint-placeholder-count="4">
+          <div style="padding:18px 0;border-bottom:1px solid #F0F1F4;display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:14.5px;font-weight:600">{{ p.name }}</div>
+              <p style="font-size:13.5px;color:#5B6472;line-height:1.6;margin:6px 0 0">{{ p.description }}</p>
+            </div>
+            <span style="font-family:'Geist Mono',monospace;font-size:12px;font-weight:500;color:{{ p.color }};background:{{ p.bg }};padding:5px 10px;border-radius:8px;flex:none">{{ p.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="border:1px solid #E4E7EC;background:#fff;border-radius:16px;padding:20px;margin-top:16px">
+        <div style="font-size:13.5px;font-weight:600">What this does not do</div>
+        <p style="font-size:13.5px;color:#5B6472;line-height:1.6;margin:8px 0 0">Payments settle on Celo, a public network. Amounts and addresses remain visible on-chain. These controls change how payment information is presented and shared inside PrivyPay — they do not make transactions anonymous or untraceable.</p>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Settings" style="max-width:860px;margin:0 auto;padding:22px 24px 40px;animation:pp-fade .22s ease both">
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#6C7484;margin-bottom:10px">ACCOUNT</div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:6px 20px">
+        <div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid #F0F1F4;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px"><div style="font-size:14.5px;font-weight:600">Username</div><div style="font-size:13px;color:#5F6878;margin-top:3px">How people pay you</div></div>
+          <div style="font-size:14.5px;font-weight:600">{{ handleDisplay }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid #F0F1F4;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px"><div style="font-size:14.5px;font-weight:600">Sign-in</div><div style="font-size:13px;color:#5F6878;margin-top:3px">Passkey on this device</div></div>
+          <div style="font-size:13.5px;color:#167A54">Active</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;padding:16px 0;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px"><div style="font-size:14.5px;font-weight:600">Payment confirmation</div><div style="font-size:13px;color:#5F6878;margin-top:3px">Always review before sending</div></div>
+          <div style="font-size:13.5px;color:#5B6472">Required</div>
+        </div>
+      </div>
+
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#6C7484;margin:22px 0 10px">LIMITS</div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:6px 20px">
+        <sc-for list="{{ limitRows }}" as="l" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid #F0F1F4;flex-wrap:wrap">
+            <div style="flex:1;min-width:180px"><div style="font-size:14.5px;font-weight:600">{{ l.name }}</div><div style="font-size:13px;color:#5F6878;margin-top:3px">{{ l.note }}</div></div>
+            <div style="font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums">{{ l.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.12em;color:#6C7484;margin:22px 0 10px">PAYMENT WALLET</div>
+      <div style="background:#fff;border:1px solid #E4E7EC;border-radius:16px;padding:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:14.5px;font-weight:600">Wallet active</div>
+          <div style="font-family:'Geist Mono',monospace;font-size:13px;color:#5B6472;margin-top:4px">{{ handleDisplay }} · 0x8A…29F</div>
+        </div>
+        <button onClick="{{ goWallet }}" style="border:1px solid #DCE0E7;background:#fff;font-size:13.5px;font-weight:500;padding:10px 16px;border-radius:10px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">Wallet details</button>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid #E8EAEF;display:flex;padding:8px 6px 10px;z-index:30">
+    <sc-for list="{{ mobileNav }}" as="m" hint-placeholder-count="5">
+      <div onClick="{{ m.onClick }}" style="flex:1;text-align:center;padding:8px 2px;cursor:pointer;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px">
+        <span style="width:6px;height:6px;border-radius:50%;background:{{ m.dot }};transition:background .2s ease"></span>
+        <span style="font-size:11.5px;color:{{ m.color }};font-weight:{{ m.weight }}">{{ m.label }}</span>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+</div>
+
+<sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeSheet }}" style="position:fixed;inset:0;background:rgba(14,20,32,.36);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding-bottom:clamp(24px,9vh,84px);animation:pp-fade .18s ease both">
+  <div onClick="{{ stop }}" style="background:#fff;width:100%;max-width:440px;border-radius:18px;padding:24px;max-height:86vh;overflow:auto;animation:pp-sheet .3s cubic-bezier(.2,.8,.3,1) both">
+
+    <sc-if value="{{ isSendSheet }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:17px;font-weight:600;letter-spacing:-.02em">{{ sendTitle }}</div>
+        <div onClick="{{ closeSheet }}" style="width:30px;height:30px;border-radius:9px;background:#F2F3F6;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#5B6472">✕</div>
+      </div>
+
+      <sc-if value="{{ sendStep1 }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="font-size:12px;color:#5F6878;margin:20px 0 6px">To</div>
+        <input value="{{ sendTo }}" onChange="{{ onSendTo }}" onKeyDown="{{ onSendKey }}" placeholder="@username" style="width:100%;border:1px solid #DCE0E7;background:#fff;border-radius:10px;padding:12px 14px;font-size:15px;outline:none;transition:border-color .16s ease,box-shadow .16s ease" style-focus="border-color:#1B45D7;box-shadow:0 0 0 3px rgba(27,69,215,.10)">
+        <div style="display:grid;gap:2px;margin-top:12px">
+          <sc-for list="{{ sendSuggestions }}" as="c" hint-placeholder-count="3">
+            <div onClick="{{ c.onPick }}" style="display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;cursor:pointer;transition:background .16s ease" style-hover="background:#F6F7F9">
+              <div style="width:32px;height:32px;border-radius:50%;background:#EDF1FE;color:#1B45D7;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center">{{ c.initial }}</div>
+              <div style="min-width:0"><div style="font-size:14.5px;font-weight:600">{{ c.handle }}</div><div style="font-size:12.5px;color:#5F6878">{{ c.name }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ sendStep2 }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="margin-top:20px;display:flex;align-items:center;gap:11px;border:1px solid #EDEFF3;border-radius:10px;padding:12px 14px">
+          <div style="width:32px;height:32px;border-radius:50%;background:#EDF1FE;color:#1B45D7;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center">{{ sendInitial }}</div>
+          <div style="min-width:0"><div style="font-size:14.5px;font-weight:600">{{ sendHandle }}</div><div style="font-size:12.5px;color:#5F6878">{{ sendName }}</div></div>
+        </div>
+        <div style="font-size:12px;color:#5F6878;margin:18px 0 6px">Amount</div>
+        <div style="display:flex;align-items:center;gap:8px;border:1px solid #DCE0E7;border-radius:10px;padding:12px 14px">
+          <span style="font-size:26px;font-weight:600;color:#6C7484">$</span>
+          <input value="{{ sendAmount }}" onChange="{{ onSendAmount }}" onKeyDown="{{ onSendKey }}" placeholder="0.00" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:28px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums">
+          <span style="font-family:'Geist Mono',monospace;font-size:12px;color:#5F6878">USDC</span>
+        </div>
+        <div style="font-size:12.5px;color:#5F6878;margin-top:8px">Balance ${{ balanceStr }} USDC · Celo</div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ sendStep3 }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="margin-top:20px;text-align:center">
+          <div style="font-size:13px;color:#5F6878">You're sending</div>
+          <div style="font-size:40px;font-weight:600;letter-spacing:-.04em;margin-top:6px;font-variant-numeric:tabular-nums">${{ sendAmountStr }}</div>
+          <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5F6878;margin-top:4px">USDC</div>
+        </div>
+        <div style="display:grid;gap:12px;margin-top:20px;border-top:1px solid #F0F1F4;padding-top:18px">
+          <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">To</span><span style="text-align:right"><span style="font-size:14px;font-weight:600;display:block">{{ sendHandle }}</span><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#6C7484">{{ sendAddress }}</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">Network</span><span style="font-size:14px;font-weight:500">Celo</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">Fee</span><span style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">$0.001</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">Privacy</span><span style="font-size:14px;font-weight:500;color:{{ privacyColor }}">{{ privacyLabel }}</span></div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ sendSending }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:34px 0 26px">
+        <div style="position:relative;width:46px;height:46px;margin:0 auto">
+          <div style="position:absolute;inset:0;border-radius:50%;border:2px solid #EDEFF3;border-top-color:#1B45D7;animation:pp-spin .9s linear infinite"></div>
+        </div>
+        <div style="font-size:16px;font-weight:600;margin-top:20px;letter-spacing:-.015em">Processing</div>
+        <div style="font-size:13.5px;color:#5F6878;margin-top:6px">Submitting to Celo</div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ sendDone }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:14px 0 4px">
+        <div style="width:48px;height:48px;border-radius:50%;background:#1B45D7;color:#fff;font-size:21px;display:flex;align-items:center;justify-content:center;margin:0 auto;animation:pp-pop .34s cubic-bezier(.2,.8,.3,1) both">✓</div>
+        <div style="font-size:17px;font-weight:600;margin-top:18px;letter-spacing:-.02em">Payment sent</div>
+        <div style="font-size:38px;font-weight:600;letter-spacing:-.04em;margin-top:12px;font-variant-numeric:tabular-nums">${{ sendAmountStr }}</div>
+        <div style="font-size:14px;color:#5B6472;margin-top:4px">{{ sendHandle }} · Celo</div>
+        <div style="font-size:13px;color:#167A54;margin-top:10px">Completed</div>
+      </div>
+      </sc-if>
+
+      <div style="margin-top:20px;display:grid;gap:9px">
+        <sc-if value="{{ sendPrimaryShown }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ sendPrimary }}" style="width:100%;border:none;background:#1B45D7;color:#fff;font-size:15px;font-weight:500;padding:14px;border-radius:11px;cursor:pointer;opacity:{{ sendPrimaryOpacity }};transition:background .16s ease,opacity .16s ease" style-hover="background:#153AB4" style-active="transform:scale(.99)">{{ sendPrimaryLabel }}</button>
+        </sc-if>
+        <sc-if value="{{ sendBackShown }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ sendBack }}" style="width:100%;border:1px solid #DCE0E7;background:#fff;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">{{ sendBackLabel }}</button>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isReceiveSheet }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:17px;font-weight:600;letter-spacing:-.02em">Receive money</div>
+        <div onClick="{{ closeSheet }}" style="width:30px;height:30px;border-radius:9px;background:#F2F3F6;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#5B6472">✕</div>
+      </div>
+      <div style="text-align:center;margin-top:20px">
+        <div style="font-size:28px;font-weight:600;letter-spacing:-.03em">{{ handleDisplay }}</div>
+        <div style="font-size:13px;color:#5F6878;margin-top:3px">Celo</div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:20px;animation:pp-fade .34s ease both">{{ qrLarge }}</div>
+      <div style="font-family:'Geist Mono',monospace;font-size:13px;color:#5B6472;text-align:center;margin-top:16px">0x8A…29F</div>
+      <p style="font-size:12.5px;color:#6C7484;text-align:center;line-height:1.6;margin:12px auto 0;max-width:300px">Share your username or address to receive supported stablecoins on Celo.</p>
+      <div style="display:grid;gap:9px;margin-top:18px">
+        <button onClick="{{ copyHandle }}" style="width:100%;border:none;background:#0E1420;color:#fff;font-size:14.5px;font-weight:500;padding:13px;border-radius:11px;cursor:pointer;transition:background .16s ease" style-hover="background:#1B45D7">{{ copyHandleLabel }}</button>
+        <button onClick="{{ copyAddress }}" style="width:100%;border:1px solid #DCE0E7;background:#fff;font-size:14.5px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">{{ copyLabel }}</button>
+        <button onClick="{{ shareReceive }}" style="width:100%;border:1px solid #DCE0E7;background:#fff;font-size:14.5px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">{{ shareLabel }}</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isTxSheet }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:17px;font-weight:600;letter-spacing:-.02em">{{ txTitle }}</div>
+        <div onClick="{{ closeSheet }}" style="width:30px;height:30px;border-radius:9px;background:#F2F3F6;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#5B6472">✕</div>
+      </div>
+      <div style="text-align:center;padding:22px 0 6px">
+        <div style="font-size:40px;font-weight:600;letter-spacing:-.04em;color:{{ txAmountColor }};font-variant-numeric:tabular-nums">{{ txAmountStr }}</div>
+        <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5F6878;margin-top:4px">USDC</div>
+      </div>
+      <div style="display:grid;gap:12px;margin-top:16px;border-top:1px solid #F0F1F4;padding-top:18px">
+        <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">{{ txDirLabel }}</span><span style="font-size:14px;font-weight:600">{{ txHandle }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">Network</span><span style="font-size:14px;font-weight:500">Celo</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">Status</span><span style="font-size:14px;font-weight:500;color:#167A54">{{ txStatus }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">Date</span><span style="font-size:14px;font-weight:500">{{ txDate }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:13.5px;color:#5F6878">Transaction</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#6C7484">{{ txHash }}</span></div>
+      </div>
+      <button style="width:100%;margin-top:18px;border:1px solid #DCE0E7;background:#fff;font-size:14px;font-weight:500;padding:12px;border-radius:11px;cursor:pointer;transition:border-color .16s ease" style-hover="border-color:#0E1420">View on Celo</button>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ toastShown }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;left:50%;bottom:88px;z-index:80;background:#0E1420;color:#fff;font-size:13.5px;font-weight:500;padding:11px 18px;border-radius:11px;animation:pp-toast 1.9s ease both;white-space:nowrap">{{ toastText }}</div>
+</sc-if>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;landing&quot;,&quot;app&quot;],&quot;default&quot;:&quot;landing&quot;,&quot;tsType&quot;:&quot;'landing' | 'app'&quot;,&quot;section&quot;:&quot;Preview&quot;}}">
+const CONTACTS = [
+  ['@sarah', 'Sarah Okafor', 'S', '0x8F…21A'],
+  ['@mike', 'Mike Johnson', 'M', '0x41…7C2'],
+  ['@designer', 'Ada Nwosu', 'A', '0x9C…04B'],
+  ['@john', 'John Mensah', 'J', '0x2D…8E1']
+];
+
+const TXS = [
+  { id: 1, dir: 'out', handle: '@sarah', name: 'Sarah Okafor', initial: 'S', amount: 120, when: 'Today · 10:42 AM', group: 'Today', kind: 'Payment', status: 'Completed', date: 'September 12, 2026', hash: '0x8f…91a' },
+  { id: 2, dir: 'in', handle: '@mike', name: 'Mike Johnson', initial: 'M', amount: 250, when: 'Yesterday · 4:18 PM', group: 'Yesterday', kind: 'Request', status: 'Completed', date: 'September 11, 2026', hash: '0x3b…77c' },
+  { id: 3, dir: 'out', handle: '@john', name: 'John Mensah', initial: 'J', amount: 10, when: 'Yesterday · 9:02 AM', group: 'Yesterday', kind: 'Payment', status: 'Completed', date: 'September 11, 2026', hash: '0xa1…2f8' },
+  { id: 4, dir: 'out', handle: '@designer', name: 'Ada Nwosu', initial: 'A', amount: 200, when: 'Sep 5 · 8:00 AM', group: 'Earlier', kind: 'Recurring', status: 'Completed', date: 'September 5, 2026', hash: '0x77…d10' },
+  { id: 5, dir: 'in', handle: '@sarah', name: 'Sarah Okafor', initial: 'S', amount: 64.5, when: 'Sep 2 · 1:26 PM', group: 'Earlier', kind: 'Payment', status: 'Completed', date: 'September 2, 2026', hash: '0x5e…b93' }
+];
+
+const SERVICES = [
+  ['chatgpt', 'ChatGPT', 'Send and request payments directly from your conversations.', '#F3F4F6', '#E3E5E9', 'AVAILABLE VIA MCP'],
+  ['claude', 'Claude', 'Kick off payments and requests from your Claude workflow.', '#FBF0EA', '#F3DED1', 'AVAILABLE VIA MCP'],
+  ['whatsapp', 'WhatsApp', 'Message your PrivyPay agent to send and request money.', '#EAF3EE', '#D9EBE1', 'AVAILABLE']
+];
+
+const MCP_TOOLS = [
+  ['get_profile', 'Read'], ['get_balance', 'Read'], ['find_contact', 'Read'], ['get_recent_transactions', 'Read'],
+  ['get_payment_status', 'Read'], ['send_payment', 'Needs confirmation'], ['request_payment', 'Needs confirmation'], ['create_recurring_payment', 'Needs confirmation']
+];
+
+const PRIVACY_ROWS = [
+  ['Payment activity', 'Who can see the payments on your PrivyPay profile.', 'Private'],
+  ['Address display', 'Whether your Celo address is shown alongside your username.', 'On request'],
+  ['Transaction notes', 'Notes you attach to payments stay in your account only.', 'Account only'],
+  ['Connected services', 'What a connected service may read about your activity.', 'Minimal']
+];
+
+if (!window.__ppEngine) {
+  window.__ppEngine = true;
+  const call = () => {
+    const f = window.__ppFrame;
+    if (f) { try { f(performance.now()); } catch (e) {} }
+  };
+  const loop = () => { call(); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+  setInterval(() => { if (performance.now() - (window.__ppFrameAt || 0) > 120) call(); }, 50);
+}
+
+class Component extends DCLogic {
+  state = {
+    view: this.props.startView === 'app' ? 'app' : 'landing',
+    heroStage: 'boot',
+    heroTyped: '',
+    cmdInput: '',
+    cmdStage: 'idle',
+    cmdIntent: null,
+    authStep: 'welcome',
+    authBusy: false,
+    email: '',
+    code: '',
+    handleInput: 'chris',
+    obStep: 'username',
+    setupTick: 0,
+    page: 'overview',
+    filter: 'All',
+    sheet: null,
+    sendStep: 1,
+    sendTo: '',
+    sendPick: null,
+    sendAmount: '',
+    reqTo: '',
+    reqAmount: '',
+    reqNote: '',
+    reqSent: null,
+    contactQuery: '',
+    privacyOn: true,
+    connections: { chatgpt: true, claude: false, whatsapp: true },
+    requests: [
+      { id: 1, handle: '@mike', initial: 'M', amount: '250.00', note: 'Logo design', status: 'Pending', payable: false },
+      { id: 2, handle: '@sarah', initial: 'S', amount: '48.00', note: 'Dinner split', status: 'Awaiting you', payable: true }
+    ],
+    recurring: [
+      { id: 1, handle: '@designer', amount: '200.00', cadence: 'Every Friday', next: 'Sep 18', paused: false },
+      { id: 2, handle: '@john', amount: '25.00', cadence: 'Monthly', next: 'Oct 1', paused: true }
+    ],
+    txDetail: null,
+    copied: false,
+    copiedHandle: false,
+    shared: false,
+    toast: null,
+    balance: 842.32,
+    isMobile: false
+  };
+
+  componentDidMount() {
+    this._resize = () => {
+      const w = window.innerWidth;
+      const mobile = w < 860;
+      if (mobile !== this.state.isMobile) this.setState({ isMobile: mobile });
+    };
+    this._resize();
+    window.addEventListener('resize', this._resize);
+    this.later(this.startHero, 420);
+    if (this.state.view === 'landing') this.mountHeroBg();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._resize);
+    this.unmountHeroBg();
+    [].concat(this._timers || [], this._heroTimers || [], this._cmdTimers || []).forEach(t => clearTimeout(t));
+  }
+
+  later(fn, ms) {
+    this._timers = this._timers || [];
+    this._timers.push(setTimeout(fn, ms));
+  }
+
+  money(n) {
+    return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  nav(page) {
+    return () => { this.setState({ page, sheet: null }); window.scrollTo(0, 0); };
+  }
+
+  keyFor(fn) {
+    return e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } };
+  }
+
+  flash(text) {
+    this.setState({ toast: text });
+    this.later(() => this.setState({ toast: null }), 1850);
+  }
+
+  chart(w, h, stroke, fill) {
+    const pts = [18, 26, 22, 34, 30, 42, 38, 52, 47, 44, 58, 66, 62, 74];
+    const max = Math.max.apply(null, pts), min = Math.min.apply(null, pts);
+    const step = w / (pts.length - 1);
+    const coords = pts.map((p, i) => [i * step, h - ((p - min) / (max - min)) * (h - 6) - 3]);
+    const line = coords.map((c, i) => (i ? 'L' : 'M') + c[0].toFixed(1) + ' ' + c[1].toFixed(1)).join(' ');
+    const area = line + ' L' + w + ' ' + h + ' L0 ' + h + ' Z';
+    return React.createElement('svg', { width: '100%', height: h, viewBox: '0 0 ' + w + ' ' + h, preserveAspectRatio: 'none', style: { display: 'block' }, 'aria-hidden': 'true' },
+      React.createElement('path', { d: area, fill: fill }),
+      React.createElement('path', { d: line, fill: 'none', stroke: stroke, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' })
+    );
+  }
+
+  qr(cell) {
+    const N = 21, cells = [];
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const finder = (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
+        const ring = finder && (x % 6 === 0 || y % 6 === 0 || (x > 1 && x < 5 && y > 1 && y < 5) || (x > 15 && x < 19 && y > 1 && y < 5) || (x > 1 && x < 5 && y > 15 && y < 19));
+        const on = finder ? ring : (((x * 7 + y * 13 + ((x * y) % 5)) % 3 === 0) || ((x + y) % 7 === 0));
+        cells.push(React.createElement('div', { key: x + '-' + y, style: { background: on ? '#0E1420' : 'transparent' } }));
+      }
+    }
+    return React.createElement('div', {
+      style: {
+        display: 'grid', gridTemplateColumns: 'repeat(21,' + cell + 'px)', gridTemplateRows: 'repeat(21,' + cell + 'px)',
+        gap: '1px', padding: '12px', background: '#fff', border: '1px solid #EDEFF3', borderRadius: '12px', width: 'fit-content'
+      }
+    }, cells);
+  }
+
+  HERO_BG = {
+    layers: [
+      { key: 'Far', count: 6, alpha: 0.07, width: 1, blur: 2.4, parallax: 7, drift: 0.5, scroll: 0.05 },
+      { key: 'Mid', count: 4, alpha: 0.125, width: 1.15, blur: 1, parallax: 4, drift: 0.85, scroll: 0.08 },
+      { key: 'Near', count: 3, alpha: 0.19, width: 1.5, blur: 0, parallax: 2, drift: 1.2, scroll: 0.12 }
+    ],
+    ink: '27,69,215',
+    pulseMin: 3200,
+    pulseMax: 7200,
+    pulseSpeed: 0.00040,
+    labels: ['$20 USDC', '$120 USDC', '$48 USDC', '$250 USDC']
+  };
+
+  domRef(k) {
+    this._refs = this._refs || {};
+    if (!this._refs[k]) this._refs[k] = React.createRef();
+    return this._refs[k];
+  }
+
+  rand(seed) {
+    let a = seed >>> 0;
+    return () => { a = (a * 1664525 + 1013904223) >>> 0; return a / 4294967296; };
+  }
+
+  buildHeroNet() {
+    this._net = this.HERO_BG.layers.map((L, li) => {
+      const rnd = this.rand(9173 + li * 733);
+      const paths = [];
+      for (let i = 0; i < L.count; i++) {
+        const pts = [];
+        let x = -0.24, y = rnd() * 1.26 - 0.13;
+        const segs = 3 + Math.floor(rnd() * 3);
+        for (let k = 0; k <= segs; k++) {
+          pts.push([x, Math.max(-0.18, Math.min(1.18, y))]);
+          x += (1.56 / segs) * (0.72 + rnd() * 0.56);
+          y += (rnd() - 0.46) * 0.42;
+        }
+        paths.push({ pts, phase: rnd() * 6.283, amp: 3 + rnd() * 9, glow: rnd() * 6.283, nodeAt: pts.map(() => rnd() > 0.44), live: [] });
+      }
+      return { L, paths };
+    });
+  }
+
+  sizeHeroBg = () => {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.HERO_BG.layers.forEach(L => {
+      const c = this.domRef('canvas' + L.key).current;
+      if (!c) return;
+      const r = c.getBoundingClientRect();
+      this._bw = Math.max(320, r.width);
+      this._bh = Math.max(240, r.height);
+      c.width = Math.round(this._bw * dpr);
+      c.height = Math.round(this._bh * dpr);
+      const ctx = c.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+    this.buildHeroNet();
+  };
+
+  pointAt(pts, t) {
+    if (!pts || pts.length < 2) return [0, 0];
+    const segs = [];
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      segs.push(d); total += d;
+    }
+    let want = Math.max(0, Math.min(1, t)) * total;
+    for (let i = 0; i < segs.length; i++) {
+      if (want <= segs[i] || i === segs.length - 1) {
+        const f = segs[i] ? want / segs[i] : 0;
+        return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f];
+      }
+      want -= segs[i];
+    }
+    return pts[pts.length - 1];
+  }
+
+  spawnPulse(fast) {
+    if (!this._net) return;
+    const cfg = this.HERO_BG;
+    const li = fast ? 2 : (Math.random() < 0.55 ? 2 : 1);
+    const group = this._net[li];
+    if (!group) return;
+    const pi = Math.floor(Math.random() * group.paths.length);
+    this._pulses.push({
+      li, pi, t: 0,
+      speed: cfg.pulseSpeed * (fast ? 1.8 : 0.8 + Math.random() * 0.6),
+      label: cfg.labels[Math.floor(Math.random() * cfg.labels.length)],
+      labelled: fast || Math.random() > 0.45
+    });
+  }
+
+  drawHeroLayer(li, t) {
+    const cfg = this.HERO_BG, group = this._net[li], L = group.L;
+    const c = this.domRef('canvas' + L.key).current;
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    const w = this._bw, hh = this._bh;
+    ctx.clearRect(0, 0, w, hh);
+    ctx.lineCap = 'round';
+    ctx.filter = L.blur ? 'blur(' + L.blur + 'px)' : 'none';
+    group.paths.forEach(p => {
+      const pts = p.pts.map((q, qi) => [q[0] * w, q[1] * hh + Math.sin(t * 0.00016 * L.drift + p.phase + qi * 0.55) * p.amp]);
+      p._pts = pts;
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) {
+        const prev = pts[i - 1], cur = pts[i];
+        ctx.quadraticCurveTo(prev[0], prev[1], (prev[0] + cur[0]) / 2, (prev[1] + cur[1]) / 2);
+      }
+      ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+      ctx.strokeStyle = 'rgba(' + cfg.ink + ',' + L.alpha + ')';
+      ctx.lineWidth = L.width;
+      ctx.stroke();
+      pts.forEach((q, qi) => {
+        if (!p.nodeAt[qi]) return;
+        const beat = 0.5 + 0.5 * Math.sin(t * 0.0008 + p.glow + qi);
+        ctx.beginPath();
+        ctx.arc(q[0], q[1], 1.5 + beat * 1.1, 0, 6.2832);
+        ctx.fillStyle = 'rgba(' + cfg.ink + ',' + (L.alpha * 2.5 * (0.45 + beat * 0.6)).toFixed(3) + ')';
+        ctx.fill();
+      });
+    });
+    ctx.filter = 'none';
+
+    this._pulses.filter(pl => pl.li === li).forEach(pl => {
+      const p = group.paths[pl.pi];
+      if (!p || !p._pts) return;
+      const pos = this.pointAt(p._pts, pl.t);
+      const tail = this.pointAt(p._pts, Math.max(0, pl.t - 0.07));
+      const fade = pl.t < 0.1 ? pl.t / 0.1 : pl.t > 0.88 ? (1 - pl.t) / 0.12 : 1;
+      const g = ctx.createLinearGradient(tail[0], tail[1], pos[0], pos[1]);
+      g.addColorStop(0, 'rgba(' + cfg.ink + ',0)');
+      g.addColorStop(1, 'rgba(' + cfg.ink + ',' + (0.5 * fade).toFixed(3) + ')');
+      ctx.beginPath();
+      ctx.moveTo(tail[0], tail[1]);
+      ctx.lineTo(pos[0], pos[1]);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+      const halo = ctx.createRadialGradient(pos[0], pos[1], 0, pos[0], pos[1], 11);
+      halo.addColorStop(0, 'rgba(' + cfg.ink + ',' + (0.32 * fade).toFixed(3) + ')');
+      halo.addColorStop(1, 'rgba(' + cfg.ink + ',0)');
+      ctx.beginPath(); ctx.arc(pos[0], pos[1], 11, 0, 6.2832); ctx.fillStyle = halo; ctx.fill();
+      ctx.beginPath(); ctx.arc(pos[0], pos[1], 2.5, 0, 6.2832);
+      ctx.fillStyle = 'rgba(' + cfg.ink + ',' + (0.85 * fade).toFixed(3) + ')'; ctx.fill();
+      if (pl.labelled && pl.t > 0.3 && pl.t < 0.74) {
+        const lf = Math.sin(((pl.t - 0.3) / 0.44) * Math.PI);
+        ctx.font = '500 11px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillStyle = 'rgba(21,58,180,' + (0.62 * lf).toFixed(3) + ')';
+        ctx.fillText(pl.label, pos[0] + 11, pos[1] - 9);
+      }
+    });
+
+    this._rings.filter(r => r.li === li).forEach(r => {
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r, 0, 6.2832);
+      ctx.strokeStyle = 'rgba(' + cfg.ink + ',' + (r.alpha * 0.55).toFixed(3) + ')';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    });
+  }
+
+  heroTick = ts => {
+    if (!this._bgAlive) return;
+    this.runFrame(ts);
+    this._raf = requestAnimationFrame(this.heroTick);
+  };
+
+  runFrame = ts => {
+    this._frameAt = ts;
+    window.__ppFrameAt = ts;
+    try { this.heroFrame(ts); } catch (e) {}
+  };
+
+  heroFrame(ts) {
+    const dt = Math.min(48, ts - (this._lastTs || ts));
+    this._lastTs = ts;
+    this._mx += (this._tmx - this._mx) * 0.055;
+    this._my += (this._tmy - this._my) * 0.055;
+    this.HERO_BG.layers.forEach(L => {
+      const wrap = this.domRef('layer' + L.key).current;
+      if (wrap) wrap.style.transform = 'translate3d(' + (this._mx * L.parallax).toFixed(2) + 'px,' + (this._my * L.parallax - (this._scrollY || 0) * L.scroll).toFixed(2) + 'px,0)';
+    });
+    this._nextPulse -= dt;
+    if (this._nextPulse <= 0) {
+      this.spawnPulse(false);
+      const cfg = this.HERO_BG;
+      this._nextPulse = cfg.pulseMin + Math.random() * (cfg.pulseMax - cfg.pulseMin);
+    }
+    this._pulses.forEach(pl => { pl.t += pl.speed * dt; });
+    this._pulses.filter(pl => pl.t >= 1).forEach(pl => {
+      const p = this._net[pl.li] && this._net[pl.li].paths[pl.pi];
+      if (p && p._pts) {
+        const end = p._pts[p._pts.length - 1];
+        this._rings.push({ li: pl.li, x: end[0], y: end[1], r: 2, alpha: 0.85 });
+      }
+    });
+    this._pulses = this._pulses.filter(pl => pl.t < 1);
+    this._rings.forEach(r => { r.r += dt * 0.055; r.alpha -= dt * 0.0011; });
+    this._rings = this._rings.filter(r => r.alpha > 0.02);
+    for (let li = 0; li < this._net.length; li++) this.drawHeroLayer(li, ts);
+  }
+
+  mountHeroBg = () => {
+    if (this._bgAlive || this._bgMounting) return;
+    if (this.HERO_BG.layers.some(L => !this.domRef('canvas' + L.key).current)) {
+      if (!this._bgRetry) { this._bgRetry = true; this.later(() => { this._bgRetry = false; this.mountHeroBg(); }, 160); }
+      return;
+    }
+    this._bgMounting = true;
+    this._mx = 0; this._my = 0; this._tmx = 0; this._tmy = 0; this._scrollY = 0;
+    this._pulses = []; this._rings = []; this._nextPulse = 1400; this._lastTs = 0;
+    this._reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    try {
+      this.sizeHeroBg();
+      this.drawHeroLayer(0, 0);
+    } catch (err) {
+      this._bgMounting = false;
+      return;
+    }
+    this._bgAlive = true;
+    this._bgMounting = false;
+    this._onBgResize = () => { try { this.sizeHeroBg(); } catch (e) {} };
+    window.addEventListener('resize', this._onBgResize);
+    if (this._reduce) {
+      for (let li = 0; li < this._net.length; li++) this.drawHeroLayer(li, 0);
+      return;
+    }
+    this._onBgMove = e => {
+      const c = this.domRef('canvasNear').current;
+      if (!c) return;
+      const r = c.getBoundingClientRect();
+      this._tmx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+      this._tmy = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    };
+    this._onBgScroll = () => { this._scrollY = window.scrollY || 0; };
+    window.addEventListener('pointermove', this._onBgMove, { passive: true });
+    window.addEventListener('scroll', this._onBgScroll, { passive: true });
+    window.__ppFrame = ts => this.runFrame(ts);
+    this.startHeroLoop();
+    if (this._watch) clearInterval(this._watch);
+    this._watch = setInterval(() => {
+      if (!this._bgAlive || this._reduce) return;
+      const now = performance.now();
+      if (now - (this._frameAt || 0) > 120) this.runFrame(now);
+    }, 50);
+  };
+
+  startHeroLoop = () => {
+    if (this._raf) cancelAnimationFrame(this._raf);
+    this._lastTs = performance.now();
+    this._raf = requestAnimationFrame(this.heroTick);
+  };
+
+  unmountHeroBg() {
+    this._bgAlive = false;
+    this._bgMounting = false;
+    if (this._watch) { clearInterval(this._watch); this._watch = null; }
+    if (this._raf) cancelAnimationFrame(this._raf);
+    window.removeEventListener('resize', this._onBgResize || (() => {}));
+    window.removeEventListener('pointermove', this._onBgMove || (() => {}));
+    window.removeEventListener('scroll', this._onBgScroll || (() => {}));
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this._bgAlive) window.__ppFrame = ts => this.runFrame(ts);
+    if (this.state.view === 'landing') this.mountHeroBg();
+    else if (this._bgAlive) this.unmountHeroBg();
+    if (this._bgAlive && !this._reduce && prevState.heroStage !== this.state.heroStage) {
+      if (this.state.heroStage === 'sending') this.spawnPulse(true);
+      if (this.state.heroStage === 'done' && this._net) {
+        this._rings.push({ li: 2, x: this._bw * 0.7, y: this._bh * 0.44, r: 4, alpha: 0.9 });
+        this._nextPulse = Math.min(this._nextPulse, 900);
+      }
+    }
+  }
+
+  startHero = () => {
+    const text = 'Send $20 to @sarah';
+    (this._heroTimers || []).forEach(t => clearTimeout(t));
+    this._heroTimers = [];
+    const at = (fn, ms) => this._heroTimers.push(setTimeout(fn, ms));
+    this.setState({ heroStage: 'typing', heroTyped: '' });
+    for (let i = 1; i <= text.length; i++) at(() => this.setState({ heroTyped: text.slice(0, i) }), 200 + i * 46);
+    const t0 = 200 + text.length * 46;
+    at(() => this.setState({ heroStage: 'thinking' }), t0 + 240);
+    at(() => this.setState({ heroStage: 'resolving' }), t0 + 950);
+    at(() => this.setState({ heroStage: 'preview' }), t0 + 1750);
+    at(() => { if (this.state.heroStage === 'preview') this.heroConfirm(); }, t0 + 5600);
+  };
+
+  heroConfirm = () => {
+    this.setState({ heroStage: 'sending' });
+    this._heroTimers = this._heroTimers || [];
+    this._heroTimers.push(setTimeout(() => this.setState({ heroStage: 'done' }), 1450));
+  };
+
+  parseCmd(raw) {
+    const low = (raw || '').trim().toLowerCase();
+    if (!low) return null;
+    const amtM = low.match(/([0-9]+(?:\.[0-9]{1,2})?)/);
+    const amount = amtM ? parseFloat(amtM[1]) : null;
+    const hM = low.match(/@([a-z0-9_]+)/);
+    const handle = hM ? '@' + hM[1] : null;
+    const every = low.match(/every\s+([a-z]+)/);
+    if (/balance|how much/.test(low)) return { kind: 'balance' };
+    if (/recent|activity|history|transactions/.test(low)) return { kind: 'activity' };
+    if (every && amount) return { kind: 'recurring', amount, handle: handle || '@designer', cadence: 'Every ' + every[1].charAt(0).toUpperCase() + every[1].slice(1) };
+    if (/request|invoice|ask/.test(low) && amount) return { kind: 'request', amount, handle: handle || '@mike', note: ((low.match(/for\s+(.+)$/) || [])[1] || 'Payment request').replace(/[.]$/, '') };
+    if (amount) return { kind: 'send', amount, handle: handle || '@sarah' };
+    return { kind: 'unknown' };
+  }
+
+  runCmd = text => {
+    const raw = typeof text === 'string' ? text : this.state.cmdInput;
+    const intent = this.parseCmd(raw);
+    if (!intent) return;
+    (this._cmdTimers || []).forEach(t => clearTimeout(t));
+    this._cmdTimers = [];
+    const at = (fn, ms) => this._cmdTimers.push(setTimeout(fn, ms));
+    this.setState({ cmdInput: raw, cmdIntent: intent, cmdStage: 'thinking' });
+    if (intent.kind === 'balance' || intent.kind === 'activity' || intent.kind === 'unknown') {
+      at(() => this.setState({ cmdStage: 'answer' }), 850);
+      return;
+    }
+    at(() => this.setState({ cmdStage: 'resolving' }), 700);
+    at(() => this.setState({ cmdStage: 'preview' }), 1650);
+  };
+
+  cmdConfirm = () => {
+    const it = this.state.cmdIntent;
+    if (!it) return;
+    this.setState({ cmdStage: 'processing' });
+    this._cmdTimers = this._cmdTimers || [];
+    this._cmdTimers.push(setTimeout(() => {
+      if (it.kind === 'send') this.setState(st => ({ balance: Math.max(0, st.balance - it.amount) }));
+      if (it.kind === 'request') this.setState(st => ({ requests: [{ id: Date.now(), handle: it.handle, initial: it.handle.charAt(1).toUpperCase(), amount: this.money(it.amount), note: it.note, status: 'Pending', payable: false }].concat(st.requests) }));
+      if (it.kind === 'recurring') this.setState(st => ({ recurring: st.recurring.concat([{ id: Date.now(), handle: it.handle, amount: this.money(it.amount), cadence: it.cadence, next: 'Sep 18', paused: false }]) }));
+      this.setState({ cmdStage: 'done' });
+    }, 1500));
+  };
+
+  cmdReset = () => this.setState({ cmdStage: 'idle', cmdIntent: null, cmdInput: '' });
+
+  startSetup = () => {
+    if (this.state.handleInput.length < 3) return;
+    this.setState({ obStep: 'creating', setupTick: 0 });
+    [1, 2, 3, 4].forEach(n => this.later(() => this.setState({ setupTick: n }), n * 380));
+    this.later(() => this.setState({ obStep: 'ready' }), 1760);
+  };
+
+  sendNext = () => {
+    const s = this.state;
+    if (s.sendStep === 1) {
+      const q = (s.sendTo || '').replace('@', '').trim().toLowerCase();
+      if (q.length < 2) return;
+      const found = CONTACTS.find(c => c[0].slice(1) === q);
+      this.setState({ sendPick: found || ['@' + q, 'PrivyPay user', q[0].toUpperCase(), '0x00…000'], sendStep: 2 });
+      return;
+    }
+    if (s.sendStep === 2) {
+      if (!(parseFloat(s.sendAmount) > 0)) return;
+      this.setState({ sendStep: 3 });
+      return;
+    }
+    if (s.sendStep === 3) {
+      this.setState({ sendStep: 4 });
+      this.later(() => {
+        const amt = parseFloat(this.state.sendAmount) || 0;
+        this.setState(st => ({ sendStep: 5, balance: Math.max(0, st.balance - amt) }));
+      }, 1450);
+      return;
+    }
+    if (s.sendStep === 5) this.setState({ sheet: null });
+  };
+
+  renderVals() {
+    const s = this.state;
+    const mobile = s.isMobile;
+    const handle = '@' + (s.handleInput || 'chris');
+    const pick = s.sendPick;
+
+    const headings = {
+      overview: ['Good morning, Chris', handle + ' · wallet ready'],
+      payments: ['Payments', 'Everything you have sent and received'],
+      requests: ['Requests', 'Money you asked for, and money asked of you'],
+      contacts: ['Contacts', 'People you pay by username'],
+      recurring: ['Recurring', 'Payments that repeat on a schedule'],
+      wallet: ['Payment wallet', 'Your provisioned Celo account'],
+      connected: ['Connected services', 'PrivyPay works with the tools you already use'],
+      privacy: ['Privacy', 'Control how payment information is presented and shared'],
+      settings: ['Settings', 'Your account, limits and payment wallet']
+    };
+
+    const navGroups = [
+      { label: '', hasLabel: false, keys: [['overview', 'Overview'], ['payments', 'Payments'], ['requests', 'Requests'], ['contacts', 'Contacts'], ['recurring', 'Recurring']] },
+      { label: 'WALLET', hasLabel: true, keys: [['wallet', 'Wallet details'], ['receive', 'Receive']] },
+      { label: 'CONNECTED', hasLabel: true, keys: [['connected', 'Connected services']] },
+      { label: 'SECURITY', hasLabel: true, keys: [['privacy', 'Privacy'], ['settings', 'Settings']] }
+    ].map(g => ({
+      label: g.label,
+      hasLabel: g.hasLabel,
+      items: g.keys.map(([k, label]) => {
+        const active = s.page === k;
+        const onClick = k === 'receive' ? () => this.setState({ sheet: 'receive' }) : this.nav(k);
+        return {
+          key: k, label, onClick, onKey: this.keyFor(onClick),
+          bg: active ? '#EDF1FE' : 'transparent',
+          dot: active ? '#1B45D7' : '#D2D7DF',
+          color: active ? '#153AB4' : '#5B6472',
+          weight: active ? '600' : '450'
+        };
+      })
+    }));
+
+    const txRow = t => {
+      const open = () => this.setState({ sheet: 'tx', txDetail: t.id });
+      return {
+        ...t,
+        sub: t.when + (t.kind === 'Recurring' ? ' · recurring' : ''),
+        amountStr: (t.dir === 'out' ? '-$' : '+$') + this.money(t.amount),
+        amountColor: t.dir === 'out' ? '#0E1420' : '#167A54',
+        avatarBg: t.dir === 'out' ? '#F1F2F5' : '#E8F3ED',
+        avatarColor: t.dir === 'out' ? '#5B6472' : '#167A54',
+        onClick: open,
+        onKey: this.keyFor(open)
+      };
+    };
+
+    const filtered = TXS.filter(t =>
+      s.filter === 'All' ? true :
+      s.filter === 'Sent' ? t.dir === 'out' :
+      s.filter === 'Received' ? t.dir === 'in' :
+      s.filter === 'Requests' ? t.kind === 'Request' : t.kind === 'Recurring'
+    ).map(txRow);
+
+    const groupOrder = ['Today', 'Yesterday', 'Earlier'];
+    const activityGroups = groupOrder
+      .map(label => ({ label: label.toUpperCase(), rows: TXS.filter(t => t.group === label).map(txRow) }))
+      .filter(g => g.rows.length);
+
+    const cq = s.contactQuery.replace('@', '').toLowerCase();
+    const contactRows = CONTACTS
+      .filter(c => !cq || c[0].slice(1).includes(cq) || c[1].toLowerCase().includes(cq))
+      .map(([h, name, initial, address]) => ({
+        handle: h, name, initial, address,
+        onSend: () => this.setState({ sheet: 'send', sendStep: 2, sendPick: [h, name, initial, address], sendAmount: '' }),
+        onRequest: () => { this.setState({ page: 'requests', reqTo: h, reqSent: null }); window.scrollTo(0, 0); }
+      }));
+
+    const tx = s.txDetail !== null ? TXS.find(t => t.id === s.txDetail) : null;
+    const sentAmt = parseFloat(s.sendAmount) || 0;
+    const setupLabels = ['Creating your account', 'Preparing your wallet', 'Connecting to Celo infrastructure', 'Finalising your payment identity'];
+
+    const heroOrder = ['boot', 'typing', 'thinking', 'resolving', 'preview', 'sending', 'done'];
+    const heroAt = heroOrder.indexOf(s.heroStage);
+    const stepChrome = done => ({ mark: done ? '✓' : '·', bg: done ? '#E8F3ED' : '#F2F3F6', color: done ? '#167A54' : '#6C7484', textColor: done ? '#0E1420' : '#5F6878' });
+
+    const it = s.cmdIntent;
+    const itContact = it && it.handle ? CONTACTS.find(c => c[0] === it.handle) : null;
+    const cmdWorkingStage = s.cmdStage === 'thinking' || s.cmdStage === 'resolving';
+    const cmdKindLabel = it ? it.kind : '';
+    const cmdMeta =
+      cmdKindLabel === 'send' ? [
+        { label: 'To', value: itContact ? itContact[3] : '0x00…000' },
+        { label: 'Network', value: 'Celo' },
+        { label: 'Privacy', value: s.privacyOn ? 'Enabled' : 'Off' },
+        { label: 'Estimated fee', value: '$0.001' }
+      ] : cmdKindLabel === 'request' ? [
+        { label: 'For', value: it.note },
+        { label: 'Network', value: 'Celo' },
+        { label: 'Status after sending', value: 'Pending' }
+      ] : cmdKindLabel === 'recurring' ? [
+        { label: 'Schedule', value: it.cadence },
+        { label: 'Next payment', value: 'Sep 18' },
+        { label: 'Network', value: 'Celo' }
+      ] : [];
+    const cmdReceipt =
+      cmdKindLabel === 'send' ? [
+        { label: 'To', value: it.handle },
+        { label: 'Network', value: 'Celo' },
+        { label: 'Status', value: 'Completed' },
+        { label: 'Transaction', value: '0x8f…91a' }
+      ] : cmdKindLabel === 'request' ? [
+        { label: 'From', value: it.handle },
+        { label: 'For', value: it.note },
+        { label: 'Status', value: 'Pending' }
+      ] : cmdKindLabel === 'recurring' ? [
+        { label: 'To', value: it.handle },
+        { label: 'Schedule', value: it.cadence },
+        { label: 'Next payment', value: 'Sep 18' },
+        { label: 'Status', value: 'Active' }
+      ] : [];
+
+    return {
+      isLanding: s.view === 'landing',
+      isAuth: s.view === 'auth',
+      isOnboarding: s.view === 'onboarding',
+      isApp: s.view === 'app',
+      isMobile: mobile,
+      isDesktop: !mobile,
+      mainPadBottom: mobile ? '86px' : '0px',
+      enterApp: () => { this.setState({ view: 'auth', authStep: 'welcome' }); window.scrollTo(0, 0); },
+      goLanding: () => { this.setState({ view: 'landing' }); window.scrollTo(0, 0); },
+      stop: e => e.stopPropagation(),
+
+      heroChart: this.chart(320, 56, '#1B45D7', 'rgba(27,69,215,.08)'),
+      balanceChart: this.chart(320, 52, '#7E9BF5', 'rgba(126,155,245,.14)'),
+
+      layerFarRef: this.domRef('layerFar'),
+      layerMidRef: this.domRef('layerMid'),
+      layerNearRef: this.domRef('layerNear'),
+      canvasFarRef: this.domRef('canvasFar'),
+      canvasMidRef: this.domRef('canvasMid'),
+      canvasNearRef: this.domRef('canvasNear'),
+
+      heroTyped: s.heroTyped,
+      heroStateLabel: { boot: 'Ready', typing: 'Listening', thinking: 'Understanding request', resolving: 'Finding @sarah', preview: 'Awaiting confirmation', sending: 'Sending payment', done: 'Payment sent' }[s.heroStage] || 'Ready',
+      heroWorking: s.heroStage === 'thinking' || s.heroStage === 'resolving',
+      heroSteps: [['Understanding request', 2], ['Resolving recipient', 3], ['Preparing payment', 4]].map(([label, idx]) => ({ label, ...stepChrome(heroAt > idx) })),
+      heroHasRecipient: heroAt >= 3,
+      heroPreview: s.heroStage === 'preview',
+      heroSending: s.heroStage === 'sending',
+      heroDone: s.heroStage === 'done',
+      heroConfirm: this.heroConfirm,
+      heroReplay: this.startHero,
+
+      cmdInput: s.cmdInput,
+      onCmdInput: e => this.setState({ cmdInput: e.target.value }),
+      onCmdKey: e => { if (e.key === 'Enter') this.runCmd(); },
+      runCmd: () => this.runCmd(),
+      cmdReset: this.cmdReset,
+      cmdConfirm: this.cmdConfirm,
+      cmdStateLabel: { idle: 'Ready', thinking: 'Understanding request', resolving: 'Resolving recipient', preview: 'Awaiting confirmation', processing: 'Sending payment', done: 'Completed', answer: 'Answered' }[s.cmdStage] || 'Ready',
+      cmdIdle: s.cmdStage === 'idle',
+      cmdWorking: cmdWorkingStage,
+      cmdStatusLabel: s.cmdStage === 'resolving' ? ('Finding ' + ((it && it.handle) || 'recipient') + '…') : 'Understanding request…',
+      cmdSteps: [['Understanding request', 1], ['Resolving recipient', 2], ['Preparing payment', 3]].map(([label, idx]) => {
+        const order = ['idle', 'thinking', 'resolving', 'preview', 'processing', 'done'];
+        return { label, ...stepChrome(order.indexOf(s.cmdStage) > idx) };
+      }),
+      cmdSuggestions: ['Send $20 to @sarah', 'Request $50 from @mike for the logo', 'Pay @designer $200 every Friday', "What's my balance?", 'Show recent payments'].map(label => {
+        const onClick = () => this.runCmd(label);
+        return { label, onClick, onKey: this.keyFor(onClick) };
+      }),
+      cmdPreview: s.cmdStage === 'preview',
+      cmdProcessing: s.cmdStage === 'processing',
+      cmdDone: s.cmdStage === 'done',
+      cmdAnswer: s.cmdStage === 'answer',
+      cmdPreviewTitle: cmdKindLabel === 'request' ? 'Payment request ready' : cmdKindLabel === 'recurring' ? 'Recurring payment ready' : 'Payment ready for confirmation',
+      cmdConfirmLabel: cmdKindLabel === 'request' ? 'Send request' : cmdKindLabel === 'recurring' ? 'Confirm recurring payment' : 'Confirm payment',
+      cmdDoneTitle: cmdKindLabel === 'request' ? 'Request sent' : cmdKindLabel === 'recurring' ? 'Recurring payment created' : 'Payment sent',
+      cmdHandle: it && it.handle ? it.handle : '',
+      cmdName: itContact ? itContact[1] : (it && it.handle ? 'PrivyPay user' : ''),
+      cmdInitial: it && it.handle ? it.handle.charAt(1).toUpperCase() : '',
+      cmdAmountStr: it && it.amount ? this.money(it.amount) : '0.00',
+      cmdMetaRows: cmdMeta,
+      cmdReceiptRows: cmdReceipt,
+      cmdAnswerLabel: cmdKindLabel === 'balance' ? 'Total balance' : cmdKindLabel === 'activity' ? 'Recent payments' : 'I can help with payments',
+      cmdAnswerValue: cmdKindLabel === 'balance' ? '$' + this.money(s.balance) + ' USDC' : cmdKindLabel === 'activity' ? 'Last three payments' : 'Try: Send $20 to @sarah',
+      cmdAnswerRows: cmdKindLabel === 'activity'
+        ? TXS.slice(0, 3).map(t => ({ handle: t.handle, sub: t.when, amount: (t.dir === 'out' ? '-$' : '+$') + this.money(t.amount), color: t.dir === 'out' ? '#0E1420' : '#167A54' }))
+        : cmdKindLabel === 'balance'
+        ? [{ handle: 'Celo', sub: 'Settlement network', amount: 'Wallet ready', color: '#167A54' }, { handle: 'This month', sub: 'Sent · received', amount: '-$330.00 · +$314.50', color: '#5B6472' }]
+        : [{ handle: 'Payments', sub: 'Send, request, schedule', amount: '', color: '#5B6472' }, { handle: 'Answers', sub: 'Balance, activity, status', amount: '', color: '#5B6472' }],
+
+      qrSmall: this.qr(4),
+      qrLarge: this.qr(6),
+
+      serviceCards: SERVICES.map(([k, name, desc, markBg, markBorder, availability], i) => {
+        const open = () => { this.setState({ view: 'auth', authStep: 'welcome' }); window.scrollTo(0, 0); };
+        return {
+          index: '0' + (i + 1), name, desc, markBg, markBorder, availability,
+          isChatgpt: k === 'chatgpt', isClaude: k === 'claude', isWhatsapp: k === 'whatsapp',
+          reveal: i === 0 ? 'left' : i === 1 ? 'up' : 'right',
+          delay: String(i * 100),
+          onOpen: open, onKey: this.keyFor(open)
+        };
+      }),
+
+      authSub: s.authStep === 'email' ? 'We will email you a one-time code.' : s.authStep === 'code' ? 'Enter the code to continue.' : 'Sign in with a passkey, or use your email.',
+      authWelcome: s.authStep === 'welcome',
+      authEmail: s.authStep === 'email',
+      authCode: s.authStep === 'code',
+      email: s.email,
+      code: s.code,
+      codeTarget: s.email || 'your inbox',
+      onEmail: e => this.setState({ email: e.target.value }),
+      onCode: e => this.setState({ code: e.target.value.replace(/[^0-9]/g, '').slice(0, 6) }),
+      onEmailKey: e => { if (e.key === 'Enter' && /.+@.+\..+/.test(s.email)) this.setState({ authStep: 'code' }); },
+      onCodeKey: e => { if (e.key === 'Enter') this.setState({ view: 'onboarding' }); },
+      emailOpacity: /.+@.+\..+/.test(s.email) ? '1' : '.45',
+      goEmail: () => this.setState({ authStep: 'email' }),
+      backToWelcome: () => this.setState({ authStep: 'welcome' }),
+      sendCode: () => { if (/.+@.+\..+/.test(s.email)) this.setState({ authStep: 'code' }); },
+      verifyCode: () => this.setState({ view: 'onboarding' }),
+      passkeyLabel: s.authBusy ? 'Waiting for your device…' : 'Continue with a passkey',
+      usePasskey: () => {
+        if (s.authBusy) return;
+        this.setState({ authBusy: true });
+        this.later(() => this.setState({ authBusy: false, view: 'onboarding' }), 1100);
+      },
+
+      obUsername: s.obStep === 'username',
+      obCreating: s.obStep === 'creating',
+      obReady: s.obStep === 'ready',
+      handleInput: s.handleInput,
+      handleDisplay: handle,
+      handleOk: s.handleInput.length > 2,
+      handleOpacity: s.handleInput.length > 2 ? '1' : '.45',
+      onHandle: e => this.setState({ handleInput: e.target.value.replace(/[^a-z0-9_]/gi, '').toLowerCase().slice(0, 18) }),
+      onHandleKey: e => { if (e.key === 'Enter') this.startSetup(); },
+      createWallet: this.startSetup,
+      setupSteps: setupLabels.map((label, i) => {
+        const done = s.setupTick > i;
+        return { label, mark: done ? '✓' : '·', bg: done ? '#E8F3ED' : '#F2F3F6', color: done ? '#167A54' : '#6C7484', textColor: done ? '#0E1420' : '#5F6878' };
+      }),
+      setupProgress: Math.round((s.setupTick / setupLabels.length) * 100) + '%',
+      finishOnboarding: () => { this.setState({ view: 'app', page: 'overview' }); window.scrollTo(0, 0); },
+
+      navGroups,
+      mobileNav: [['overview', 'Home'], ['payments', 'Payments'], ['requests', 'Requests'], ['contacts', 'Contacts'], ['settings', 'Settings']].map(([k, label]) => {
+        const active = s.page === k;
+        return { label, onClick: this.nav(k), dot: active ? '#1B45D7' : 'transparent', color: active ? '#153AB4' : '#5F6878', weight: active ? '600' : '450' };
+      }),
+
+      pageHeading: (headings[s.page] || ['PrivyPay', ''])[0],
+      pageSub: (headings[s.page] || ['', ''])[1],
+      isOverview: s.page === 'overview',
+      isPayments: s.page === 'payments',
+      isRequests: s.page === 'requests',
+      isContacts: s.page === 'contacts',
+      isRecurring: s.page === 'recurring',
+      isWallet: s.page === 'wallet',
+      isConnected: s.page === 'connected',
+      isPrivacy: s.page === 'privacy',
+      isSettings: s.page === 'settings',
+      goActivity: this.nav('payments'),
+      goActivityKey: this.keyFor(this.nav('payments')),
+      goWallet: this.nav('wallet'),
+
+      balanceStr: this.money(s.balance),
+      balanceChange: '+$314.50 this month',
+      sentMonth: this.money(330),
+      receivedMonth: this.money(314.5),
+
+      quickActions: [
+        ['Send money', '↗', () => this.setState({ sheet: 'send', sendStep: 1, sendTo: '', sendPick: null, sendAmount: '' })],
+        ['Receive money', '↙', () => this.setState({ sheet: 'receive' })],
+        ['Request payment', '⇄', this.nav('requests')],
+        ['Recurring payments', '↻', this.nav('recurring')]
+      ].map(([label, icon, onClick]) => ({ label, icon, onClick, onKey: this.keyFor(onClick) })),
+
+      recentTxs: TXS.slice(0, 4).map(txRow),
+      filters: ['All', 'Sent', 'Received', 'Requests', 'Recurring'].map(label => {
+        const active = s.filter === label;
+        const onClick = () => this.setState({ filter: label });
+        return { label, onClick, onKey: this.keyFor(onClick), bg: active ? '#0E1420' : '#fff', color: active ? '#fff' : '#5B6472', border: active ? '#0E1420' : '#DCE0E7' };
+      }),
+      filteredTxs: filtered,
+      noTxs: filtered.length === 0,
+
+      contactQuery: s.contactQuery,
+      onContactQuery: e => this.setState({ contactQuery: e.target.value }),
+      contactRows,
+      noContacts: contactRows.length === 0,
+
+      reqTo: s.reqTo,
+      reqAmount: s.reqAmount,
+      reqNote: s.reqNote,
+      onReqTo: e => this.setState({ reqTo: e.target.value }),
+      onReqAmount: e => this.setState({ reqAmount: e.target.value.replace(/[^0-9.]/g, '') }),
+      onReqNote: e => this.setState({ reqNote: e.target.value }),
+      reqFormOpen: !s.reqSent,
+      reqDone: !!s.reqSent,
+      reqOpacity: (s.reqTo && parseFloat(s.reqAmount) > 0) ? '1' : '.45',
+      createRequest: () => {
+        if (!s.reqTo || !(parseFloat(s.reqAmount) > 0)) return;
+        const to = s.reqTo.startsWith('@') ? s.reqTo : '@' + s.reqTo;
+        const row = { id: Date.now(), handle: to, initial: to[1].toUpperCase(), amount: this.money(parseFloat(s.reqAmount)), note: s.reqNote || 'Payment request', status: 'Pending', payable: false };
+        this.setState(st => ({ reqSent: row, requests: [row].concat(st.requests), reqTo: '', reqAmount: '', reqNote: '' }));
+      },
+      newRequest: () => this.setState({ reqSent: null }),
+      sentReqTo: s.reqSent ? s.reqSent.handle : '',
+      sentReqAmount: s.reqSent ? s.reqSent.amount : '',
+      sentReqNote: s.reqSent ? s.reqSent.note : '',
+      requestRows: s.requests.map(r => ({
+        ...r,
+        statusColor: r.status === 'Pending' ? '#8A6A1E' : '#153AB4',
+        onPay: () => {
+          this.setState(st => ({
+            requests: st.requests.map(x => x.id === r.id ? { ...x, status: 'Paid', payable: false } : x),
+            balance: Math.max(0, st.balance - parseFloat(r.amount.replace(/,/g, '')))
+          }));
+          this.flash('Payment sent to ' + r.handle);
+        }
+      })),
+
+      recurringRows: s.recurring.map(r => ({
+        ...r,
+        statusLabel: r.paused ? 'Paused' : 'Active',
+        statusColor: r.paused ? '#8A6A1E' : '#167A54',
+        statusDot: r.paused ? '#D8A93A' : '#167A54',
+        action: r.paused ? 'Resume' : 'Pause',
+        onToggle: () => {
+          this.setState(st => ({ recurring: st.recurring.map(x => x.id === r.id ? { ...x, paused: !x.paused } : x) }));
+          this.flash(r.paused ? 'Resumed ' + r.handle : 'Paused ' + r.handle);
+        }
+      })),
+
+      serviceRows: SERVICES.map(([k, name, desc, markBg, markBorder]) => {
+        const on = !!s.connections[k];
+        return {
+          name, desc, markBg, markBorder,
+          isChatgpt: k === 'chatgpt', isClaude: k === 'claude', isWhatsapp: k === 'whatsapp',
+          stateLabel: on ? 'Connected' : 'Not connected',
+          stateColor: on ? '#167A54' : '#8A6A1E',
+          dot: on ? '#167A54' : '#D8A93A',
+          ctaLabel: on ? 'Manage' : 'Connect',
+          ctaBg: on ? '#fff' : '#1B45D7',
+          ctaColor: on ? '#0E1420' : '#fff',
+          ctaBorder: on ? '#DCE0E7' : '#1B45D7',
+          onToggle: () => {
+            this.setState(st => ({ connections: { ...st.connections, [k]: !st.connections[k] } }));
+            this.flash(on ? name + ' disconnected' : name + ' connected');
+          }
+        };
+      }),
+      mcpTools: MCP_TOOLS.map(([name, mode]) => ({ name, mode, color: mode === 'Read' ? '#5F6878' : '#153AB4' })),
+      connectedLimits: [
+        { label: 'Per payment cap', value: '$500.00' },
+        { label: 'Daily cap', value: '$1,000.00' },
+        { label: 'Confirmation', value: 'Always required' }
+      ],
+
+      privacyOn: s.privacyOn,
+      privacyLabel: s.privacyOn ? 'On' : 'Off',
+      privacyColor: s.privacyOn ? '#167A54' : '#5F6878',
+      privacyToggleBg: s.privacyOn ? '#1B45D7' : '#D2D7DF',
+      privacyKnobLeft: s.privacyOn ? '23px' : '3px',
+      togglePrivacy: () => this.setState({ privacyOn: !s.privacyOn }),
+      privacyKey: this.keyFor(() => this.setState({ privacyOn: !s.privacyOn })),
+      privacyRows: PRIVACY_ROWS.map(([name, description, value]) => ({
+        name, description,
+        value: s.privacyOn ? value : 'Default',
+        color: s.privacyOn ? '#153AB4' : '#5B6472',
+        bg: s.privacyOn ? '#EDF1FE' : '#F2F3F6'
+      })),
+
+      limitRows: [
+        { name: 'Per payment', note: 'Maximum for a single payment', value: '$500.00' },
+        { name: 'Daily', note: 'Total you can send in a day', value: '$1,000.00' },
+        { name: 'Recurring', note: 'Maximum for a scheduled payment', value: '$400.00' }
+      ],
+
+      sheetOpen: !!s.sheet,
+      closeSheet: () => this.setState({ sheet: null }),
+      openSend: () => this.setState({ sheet: 'send', sendStep: 1, sendTo: '', sendPick: null, sendAmount: '' }),
+      openReceive: () => this.setState({ sheet: 'receive' }),
+      isSendSheet: s.sheet === 'send',
+      isReceiveSheet: s.sheet === 'receive',
+      isTxSheet: s.sheet === 'tx',
+
+      sendTitle: s.sendStep === 1 ? 'Send money' : s.sendStep === 2 ? 'Amount' : s.sendStep === 3 ? 'Review payment' : s.sendStep === 4 ? 'Sending' : 'Receipt',
+      sendStep1: s.sendStep === 1,
+      sendStep2: s.sendStep === 2,
+      sendStep3: s.sendStep === 3,
+      sendSending: s.sendStep === 4,
+      sendDone: s.sendStep === 5,
+      sendTo: s.sendTo,
+      onSendTo: e => this.setState({ sendTo: e.target.value }),
+      onSendAmount: e => this.setState({ sendAmount: e.target.value.replace(/[^0-9.]/g, '') }),
+      onSendKey: e => { if (e.key === 'Enter') this.sendNext(); },
+      sendSuggestions: CONTACTS.map(([h, name, initial, address]) => ({
+        handle: h, name, initial,
+        onPick: () => this.setState({ sendPick: [h, name, initial, address], sendTo: h, sendStep: 2 })
+      })),
+      sendHandle: pick ? pick[0] : '',
+      sendName: pick ? pick[1] : '',
+      sendInitial: pick ? pick[2] : '',
+      sendAddress: pick ? pick[3] : '',
+      sendAmount: s.sendAmount,
+      sendAmountStr: this.money(sentAmt),
+      sendPrimaryShown: s.sendStep !== 4,
+      sendPrimaryLabel: s.sendStep === 1 ? 'Continue' : s.sendStep === 2 ? 'Review payment' : s.sendStep === 3 ? 'Confirm payment' : 'Done',
+      sendPrimaryOpacity: (s.sendStep === 1 && (s.sendTo || '').replace('@', '').length < 2) || (s.sendStep === 2 && !(parseFloat(s.sendAmount) > 0)) ? '.45' : '1',
+      sendPrimary: this.sendNext,
+      sendBackShown: s.sendStep === 2 || s.sendStep === 3 || s.sendStep === 5,
+      sendBackLabel: s.sendStep === 5 ? 'View receipt' : 'Back',
+      sendBack: () => {
+        if (s.sendStep === 5) {
+          this.setState({ sheet: 'tx', txDetail: 1 });
+          return;
+        }
+        this.setState({ sendStep: s.sendStep - 1 });
+      },
+
+      copyLabel: s.copied ? 'Address copied' : 'Copy address',
+      copyAddress: () => {
+        this.setState({ copied: true });
+        this.flash('Celo address copied');
+        this.later(() => this.setState({ copied: false }), 1600);
+      },
+      copyHandleLabel: s.copiedHandle ? 'Username copied' : 'Copy username',
+      copyHandle: () => {
+        this.setState({ copiedHandle: true });
+        this.flash(handle + ' copied');
+        this.later(() => this.setState({ copiedHandle: false }), 1600);
+      },
+      shareLabel: s.shared ? 'Link ready' : 'Share',
+      shareReceive: () => {
+        this.setState({ shared: true });
+        this.flash('Payment link ready');
+        this.later(() => this.setState({ shared: false }), 1600);
+      },
+
+      txTitle: tx ? (tx.dir === 'out' ? 'Payment sent' : 'Payment received') : 'Payment',
+      txAmountStr: tx ? (tx.dir === 'out' ? '-$' : '+$') + this.money(tx.amount) : '',
+      txAmountColor: tx && tx.dir === 'in' ? '#167A54' : '#0E1420',
+      txDirLabel: tx && tx.dir === 'out' ? 'To' : 'From',
+      txHandle: tx ? tx.handle : '',
+      txStatus: tx ? tx.status : '',
+      txDate: tx ? tx.date : '',
+      txHash: tx ? tx.hash : '',
+
+      toastShown: !!s.toast,
+      toastText: s.toast || ''
+    };
+  }
+}
+</script>
+</body>
+</html>

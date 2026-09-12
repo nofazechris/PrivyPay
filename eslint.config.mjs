@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Source design file plus its vendored Claude Design runtime — input to the build, not
+    // application code.
+    "design/**",
+    // Node build script for `npm run design:build`; runs outside the bundler.
+    "tools/**",
   ]),
 ]);
 
