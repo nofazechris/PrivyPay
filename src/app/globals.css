@@ -8,3 +8,61 @@
   --font-sans: var(--font-geist);
   --font-mono: var(--font-geist-mono);
 }
+
+/* Design tokens (§94–97), mirrored from src/lib/design/tokens.ts. Single source of truth for
+   hand-built components; keep the two in sync. */
+:root {
+  --pp-primary: #1B45D7;
+  --pp-primary-hover: #153AB4;
+  --pp-primary-soft: #EDF1FE;
+  --pp-primary-soft-border: #DDE3F6;
+  --pp-ink: #0E1420;
+  --pp-background: #F6F7F9;
+  --pp-surface: #FFFFFF;
+  --pp-surface-muted: #FBFBFD;
+  --pp-muted: #5B6472;
+  --pp-muted-strong: #5F6878;
+  --pp-faint: #6C7484;
+  --pp-border: #E4E7EC;
+  --pp-border-strong: #DCE0E7;
+  --pp-border-faint: #EDEFF3;
+  --pp-success: #167A54;
+  --pp-success-soft: #E8F3ED;
+  --pp-warning: #8A6A1E;
+  --pp-danger: #C0362A;
+  --pp-danger-soft: #F6E9E7;
+  --pp-radius-card: 14px;
+  --pp-radius-control: 11px;
+  --pp-shadow-card: 0 30px 60px -38px rgba(14, 20, 32, .34);
+  --pp-focus-ring: 0 0 0 3px rgba(27, 69, 215, .10);
+}
+
+/* Interaction states for the reusable UI primitives (src/components/ui). Kept here so the
+   primitives stay declarative and share one hover/focus vocabulary. */
+.pp-btn {
+  transition: background .16s ease, border-color .16s ease, transform .16s ease, opacity .16s ease;
+}
+.pp-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+.pp-btn:not(:disabled):active {
+  transform: translateY(0) scale(.99);
+}
+.pp-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.pp-btn--primary:not(:disabled):hover {
+  background: var(--pp-primary-hover);
+}
+.pp-btn--secondary:not(:disabled):hover {
+  border-color: var(--pp-ink);
+}
+.pp-input {
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.pp-input:focus {
+  outline: none;
+  border-color: var(--pp-primary);
+  box-shadow: var(--pp-focus-ring);
+}
