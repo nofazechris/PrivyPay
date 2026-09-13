@@ -44,28 +44,34 @@ export default function PrivyLoginForm() {
     }
   }, [v.code, loginWithCode, goApp, toast]);
 
-  // Passkey: log in with an existing passkey, and if the user has none yet, create one
-  // (register a new passkey + account). This is what lets a first-time user sign up with a
-  // passkey rather than hitting a login that always fails for lack of a credential.
+  // Passkey. This is a "Create your account" surface, so the primary action creates a passkey
+  // (single WebAuthn call, bound to the click's user activation — chaining a second call would
+  // lose that activation and the browser would block it). If the user already has a passkey,
+  // signup fails and we fall back to logging in. Real errors are logged so a misconfiguration
+  // (e.g. passkey signup not enabled in the Privy dashboard) is diagnosable.
   const doPasskey = useCallback(async () => {
     if (passkeyBusy) return;
     setPasskeyBusy(true);
     try {
-      await loginWithPasskey();
-      goApp();
-      return;
-    } catch {
-      // No usable passkey for this device/account — fall through to creating one.
-    }
-    try {
       await signupWithPasskey();
       goApp();
-    } catch {
-      toast.show('Passkey wasn’t completed. Try again, or use your email.', { tone: 'danger' });
+    } catch (signupErr) {
+      console.error('[passkey] signup failed:', signupErr);
+      try {
+        await loginWithPasskey();
+        goApp();
+      } catch (loginErr) {
+        console.error('[passkey] login failed:', loginErr);
+        const detail = signupErr instanceof Error ? signupErr.message : '';
+        toast.show(detail ? `Passkey failed: ${detail}` : 'Passkey wasn’t completed. Try again, or use your email.', {
+          tone: 'danger',
+          duration: 4500,
+        });
+      }
     } finally {
       setPasskeyBusy(false);
     }
-  }, [passkeyBusy, loginWithPasskey, signupWithPasskey, goApp, toast]);
+  }, [passkeyBusy, signupWithPasskey, loginWithPasskey, goApp, toast]);
 
   // Keep the design's UI/step values; replace the five money-path handlers with real auth.
   const authVals = useMemo(
