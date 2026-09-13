@@ -48,8 +48,13 @@ export default function AuthScreen({ v }: { v: Vals }) {
             <>
               <div>
                 <input className="scp6" value={v.code} onChange={v.onCode} onKeyDown={v.onCodeKey} placeholder="6-digit code" style={{ "width": "100%", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "11px", "padding": "13px 15px", "fontSize": "17px", "fontFamily": "var(--font-geist-mono),monospace", "letterSpacing": ".28em", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
-                <div style={{ "fontSize": "12.5px", "color": "#5F6878", "marginTop": "10px" }}>
-                  {"Sent to "}{v.codeTarget}
+                <div style={{ "display": "flex", "alignItems": "center", "justifyContent": "space-between", "gap": "10px", "marginTop": "10px" }}>
+                  <span style={{ "fontSize": "12.5px", "color": "#5F6878" }}>
+                    {"Sent to "}{v.codeTarget}
+                  </span>
+                  <button className="scpc" onClick={v.resendCode} style={{ "border": "none", "background": "transparent", "color": "#1B45D7", "fontSize": "12.5px", "fontWeight": "500", "padding": "0", "cursor": "pointer", "transition": "color .16s ease" }}>
+                    {v.resendLabel}
+                  </button>
                 </div>
                 <button className="scpb" onClick={v.verifyCode} style={{ "width": "100%", "marginTop": "12px", "border": "none", "background": "#0E1420", "color": "#fff", "fontSize": "15px", "fontWeight": "500", "padding": "14px", "borderRadius": "11px", "cursor": "pointer", "transition": "background .16s ease" }}>
                   {"Verify"}

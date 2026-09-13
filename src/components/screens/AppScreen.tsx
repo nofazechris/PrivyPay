@@ -29,7 +29,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                     <div style={{ "display": "grid", "gap": "2px" }}>
                       {g.items.map((n, i) => (
                         <Fragment key={i}>
-                          <div className="scpe" onClick={n.onClick} tabIndex={0} onKeyDown={n.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "10px", "padding": "9px 10px", "borderRadius": "9px", "cursor": "pointer", "fontSize": "14px", "background": n.bg, "outline": "none", "transition": "background .16s ease" }}>
+                          <div className="scpf" onClick={n.onClick} tabIndex={0} onKeyDown={n.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "10px", "padding": "9px 10px", "borderRadius": "9px", "cursor": "pointer", "fontSize": "14px", "background": n.bg, "outline": "none", "transition": "background .16s ease" }}>
                             <span style={{ "width": "6px", "height": "6px", "borderRadius": "50%", "background": n.dot, "flex": "none", "transition": "background .2s ease" }}></span>
                             <span style={{ "color": n.color, "fontWeight": n.weight }}>
                               {n.label}
@@ -69,7 +69,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                   {v.pageSub}
                 </div>
               </div>
-              <button className="scpc scpf" onClick={v.openSend} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "10px 16px", "borderRadius": "10px", "cursor": "pointer", "transition": "background .16s ease" }}>
+              <button className="scpd scpg" onClick={v.openSend} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "10px 16px", "borderRadius": "10px", "cursor": "pointer", "transition": "background .16s ease" }}>
                 {"Send"}
               </button>
               <button className="scp5" onClick={v.openReceive} style={{ "border": "1px solid #DCE0E7", "background": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "10px 16px", "borderRadius": "10px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
@@ -306,10 +306,10 @@ export default function AppScreen({ v }: { v: Vals }) {
                       {v.balanceChart}
                     </div>
                     <div style={{ "display": "flex", "gap": "10px", "marginTop": "22px", "flexWrap": "wrap" }}>
-                      <button className="scpg" onClick={v.openSend} style={{ "flex": "1", "minWidth": "118px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14.5px", "fontWeight": "500", "padding": "12px", "borderRadius": "10px", "cursor": "pointer", "transition": "background .16s ease" }}>
+                      <button className="scph" onClick={v.openSend} style={{ "flex": "1", "minWidth": "118px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14.5px", "fontWeight": "500", "padding": "12px", "borderRadius": "10px", "cursor": "pointer", "transition": "background .16s ease" }}>
                         {"Send"}
                       </button>
-                      <button className="scph" onClick={v.openReceive} style={{ "flex": "1", "minWidth": "118px", "border": "1px solid #2A3140", "background": "transparent", "color": "#fff", "fontSize": "14.5px", "fontWeight": "500", "padding": "12px", "borderRadius": "10px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
+                      <button className="scpi" onClick={v.openReceive} style={{ "flex": "1", "minWidth": "118px", "border": "1px solid #2A3140", "background": "transparent", "color": "#fff", "fontSize": "14.5px", "fontWeight": "500", "padding": "12px", "borderRadius": "10px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
                         {"Receive"}
                       </button>
                     </div>
@@ -318,7 +318,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                     <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "8px" }}>
                       {v.quickActions.map((q, i) => (
                         <Fragment key={i}>
-                          <div className="scpi" onClick={q.onClick} tabIndex={0} onKeyDown={q.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "12px", "padding": "12px 14px", "borderRadius": "10px", "cursor": "pointer", "outline": "none", "transition": "background .16s ease" }}>
+                          <div className="scpj" onClick={q.onClick} tabIndex={0} onKeyDown={q.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "12px", "padding": "12px 14px", "borderRadius": "10px", "cursor": "pointer", "outline": "none", "transition": "background .16s ease" }}>
                             <span style={{ "width": "30px", "height": "30px", "borderRadius": "9px", "background": "#EDF1FE", "color": "#1B45D7", "fontSize": "14px", "display": "flex", "alignItems": "center", "justifyContent": "center", "flex": "none" }}>
                               {q.icon}
                             </span>
@@ -379,7 +379,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                 <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "marginTop": "12px", "overflow": "hidden" }}>
                   {v.recentTxs.map((t, i) => (
                     <Fragment key={i}>
-                      <div className="scpj" onClick={t.onClick} tabIndex={0} onKeyDown={t.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "14px", "padding": "15px 20px", "borderBottom": "1px solid #F0F1F4", "cursor": "pointer", "outline": "none", "transition": "background .16s ease" }}>
+                      <div className="scpk" onClick={t.onClick} tabIndex={0} onKeyDown={t.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "14px", "padding": "15px 20px", "borderBottom": "1px solid #F0F1F4", "cursor": "pointer", "outline": "none", "transition": "background .16s ease" }}>
                         <div style={{ "width": "34px", "height": "34px", "borderRadius": "50%", "background": t.avatarBg, "color": t.avatarColor, "fontSize": "14px", "fontWeight": "600", "display": "flex", "alignItems": "center", "justifyContent": "center", "flex": "none" }}>
                           {t.initial}
                         </div>
@@ -421,7 +421,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                 <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "marginTop": "16px", "overflow": "hidden" }}>
                   {v.filteredTxs.map((t, i) => (
                     <Fragment key={i}>
-                      <div className="scpj" onClick={t.onClick} tabIndex={0} onKeyDown={t.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "14px", "padding": "15px 20px", "borderBottom": "1px solid #F0F1F4", "cursor": "pointer", "outline": "none", "transition": "background .16s ease" }}>
+                      <div className="scpk" onClick={t.onClick} tabIndex={0} onKeyDown={t.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "14px", "padding": "15px 20px", "borderBottom": "1px solid #F0F1F4", "cursor": "pointer", "outline": "none", "transition": "background .16s ease" }}>
                         <div style={{ "width": "34px", "height": "34px", "borderRadius": "50%", "background": t.avatarBg, "color": t.avatarColor, "fontSize": "14px", "fontWeight": "600", "display": "flex", "alignItems": "center", "justifyContent": "center", "flex": "none" }}>
                           {t.initial}
                         </div>
@@ -490,7 +490,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                             <input className="scp6" value={v.reqNote} onChange={v.onReqNote} placeholder="Logo design" style={{ "width": "100%", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 13px", "fontSize": "14.5px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
                           </div>
                         </div>
-                        <button className="scpc scpd" onClick={v.createRequest} style={{ "marginTop": "14px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14.5px", "fontWeight": "500", "padding": "12px 20px", "borderRadius": "10px", "cursor": "pointer", "opacity": v.reqOpacity, "transition": "background .16s ease,opacity .16s ease" }}>
+                        <button className="scpd scpe" onClick={v.createRequest} style={{ "marginTop": "14px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14.5px", "fontWeight": "500", "padding": "12px 20px", "borderRadius": "10px", "cursor": "pointer", "opacity": v.reqOpacity, "transition": "background .16s ease,opacity .16s ease" }}>
                           {"Create request"}
                         </button>
                       </div>
@@ -576,7 +576,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                         </div>
                         {r.payable ? (
                           <>
-                            <button className="scpc" onClick={r.onPay} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "13.5px", "fontWeight": "500", "padding": "9px 14px", "borderRadius": "9px", "cursor": "pointer", "flex": "none", "transition": "background .16s ease" }}>
+                            <button className="scpd" onClick={r.onPay} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "13.5px", "fontWeight": "500", "padding": "9px 14px", "borderRadius": "9px", "cursor": "pointer", "flex": "none", "transition": "background .16s ease" }}>
                               {"Pay"}
                             </button>
                           </>
@@ -595,7 +595,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                 <div style={{ "display": "grid", "gridTemplateColumns": "repeat(auto-fit,minmax(256px,1fr))", "gap": "12px", "marginTop": "16px" }}>
                   {v.contactRows.map((c, i) => (
                     <Fragment key={i}>
-                      <div className="scpk" style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "14px", "padding": "18px", "transition": "transform .18s ease,box-shadow .18s ease" }}>
+                      <div className="scpl" style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "14px", "padding": "18px", "transition": "transform .18s ease,box-shadow .18s ease" }}>
                         <div style={{ "display": "flex", "alignItems": "center", "gap": "11px" }}>
                           <div style={{ "width": "36px", "height": "36px", "borderRadius": "50%", "background": "#EDF1FE", "color": "#1B45D7", "fontSize": "14px", "fontWeight": "600", "display": "flex", "alignItems": "center", "justifyContent": "center" }}>
                             {c.initial}
@@ -709,7 +709,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                   <button className="scp5" onClick={v.copyAddress} style={{ "flex": "1", "minWidth": "140px", "border": "1px solid #DCE0E7", "background": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "12px", "borderRadius": "11px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
                     {v.copyLabel}
                   </button>
-                  <button className="scpc" onClick={v.openReceive} style={{ "flex": "1", "minWidth": "140px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "12px", "borderRadius": "11px", "cursor": "pointer", "transition": "background .16s ease" }}>
+                  <button className="scpd" onClick={v.openReceive} style={{ "flex": "1", "minWidth": "140px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "12px", "borderRadius": "11px", "cursor": "pointer", "transition": "background .16s ease" }}>
                     {"Receive"}
                   </button>
                   <button className="scp5" onClick={v.goActivity} style={{ "flex": "1", "minWidth": "140px", "border": "1px solid #DCE0E7", "background": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "12px", "borderRadius": "11px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
@@ -733,7 +733,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                 <div style={{ "display": "grid", "gridTemplateColumns": "repeat(auto-fit,minmax(272px,1fr))", "gap": "12px" }}>
                   {v.serviceRows.map((sv, i) => (
                     <Fragment key={i}>
-                      <div className="scpl" style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "22px", "display": "flex", "flexDirection": "column", "transition": "transform .18s ease,box-shadow .18s ease" }}>
+                      <div className="scpm" style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "22px", "display": "flex", "flexDirection": "column", "transition": "transform .18s ease,box-shadow .18s ease" }}>
                         <div style={{ "display": "flex", "alignItems": "center", "gap": "12px" }}>
                           <div style={{ "width": "38px", "height": "38px", "borderRadius": "11px", "background": sv.markBg, "border": `1px solid ${sv.markBorder}`, "display": "flex", "alignItems": "center", "justifyContent": "center", "overflow": "hidden", "flex": "none" }}>
                             {sv.isChatgpt ? (
@@ -1010,7 +1010,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                           <div style={{ "display": "grid", "gap": "2px", "marginTop": "12px" }}>
                             {v.sendSuggestions.map((c, i) => (
                               <Fragment key={i}>
-                                <div className="scpi" onClick={c.onPick} style={{ "display": "flex", "alignItems": "center", "gap": "11px", "padding": "11px 12px", "borderRadius": "10px", "cursor": "pointer", "transition": "background .16s ease" }}>
+                                <div className="scpj" onClick={c.onPick} style={{ "display": "flex", "alignItems": "center", "gap": "11px", "padding": "11px 12px", "borderRadius": "10px", "cursor": "pointer", "transition": "background .16s ease" }}>
                                   <div style={{ "width": "32px", "height": "32px", "borderRadius": "50%", "background": "#EDF1FE", "color": "#1B45D7", "fontSize": "13.5px", "fontWeight": "600", "display": "flex", "alignItems": "center", "justifyContent": "center" }}>
                                     {c.initial}
                                   </div>
@@ -1158,7 +1158,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                     <div style={{ "marginTop": "20px", "display": "grid", "gap": "9px" }}>
                       {v.sendPrimaryShown ? (
                         <>
-                          <button className="scpc scpd" onClick={v.sendPrimary} style={{ "width": "100%", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "15px", "fontWeight": "500", "padding": "14px", "borderRadius": "11px", "cursor": "pointer", "opacity": v.sendPrimaryOpacity, "transition": "background .16s ease,opacity .16s ease" }}>
+                          <button className="scpd scpe" onClick={v.sendPrimary} style={{ "width": "100%", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "15px", "fontWeight": "500", "padding": "14px", "borderRadius": "11px", "cursor": "pointer", "opacity": v.sendPrimaryOpacity, "transition": "background .16s ease,opacity .16s ease" }}>
                             {v.sendPrimaryLabel}
                           </button>
                         </>

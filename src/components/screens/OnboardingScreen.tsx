@@ -33,7 +33,7 @@ export default function OnboardingScreen({ v }: { v: Vals }) {
                     </>
                   ) : null}
                 </div>
-                <button className="scpc scpd" onClick={v.createWallet} style={{ "width": "100%", "marginTop": "14px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "15px", "fontWeight": "500", "padding": "14px", "borderRadius": "11px", "cursor": "pointer", "opacity": v.handleOpacity, "transition": "background .16s ease,opacity .16s ease" }}>
+                <button className="scpd scpe" onClick={v.createWallet} style={{ "width": "100%", "marginTop": "14px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "15px", "fontWeight": "500", "padding": "14px", "borderRadius": "11px", "cursor": "pointer", "opacity": v.handleOpacity, "transition": "background .16s ease,opacity .16s ease" }}>
                   {"Continue"}
                 </button>
                 <div style={{ "fontSize": "12.5px", "color": "#6C7484", "marginTop": "16px", "lineHeight": "1.6" }}>
@@ -95,7 +95,7 @@ export default function OnboardingScreen({ v }: { v: Vals }) {
                     </span>
                   </div>
                 </div>
-                <button className="scpc scpd" onClick={v.finishOnboarding} style={{ "width": "100%", "marginTop": "16px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "15px", "fontWeight": "500", "padding": "14px", "borderRadius": "11px", "cursor": "pointer", "transition": "background .16s ease" }}>
+                <button className="scpd scpe" onClick={v.finishOnboarding} style={{ "width": "100%", "marginTop": "16px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "15px", "fontWeight": "500", "padding": "14px", "borderRadius": "11px", "cursor": "pointer", "transition": "background .16s ease" }}>
                   {"Start using PrivyPay"}
                 </button>
               </div>

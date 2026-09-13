@@ -743,6 +743,9 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing') {
         if (emailValid) setState({ authStep: 'code' });
       },
       verifyCode: () => setState({ view: 'onboarding' }),
+      // Resend a one-time code (real behavior wired in the login route). Demo default no-op.
+      resendCode: () => {},
+      resendLabel: 'Resend code',
       passkeyLabel: s.authBusy ? 'Waiting for your device…' : 'Continue with a passkey',
       usePasskey: () => {
         if (s.authBusy) return;

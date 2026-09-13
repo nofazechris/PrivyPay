@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLoginWithEmail, useLoginWithPasskey, useSignupWithPasskey } from '@privy-io/react-auth';
 import { useViewModel } from '@/lib/viewModel';
@@ -8,6 +8,8 @@ import { useToast } from '@/components/ui';
 import AuthScreen from '@/components/screens/AuthScreen';
 
 const EMAIL_RE = /.+@.+\..+/;
+/** Seconds to wait before another code can be requested. */
+const RESEND_COOLDOWN = 30;
 
 /**
  * Full-page sign-in (§8, §57). Reuses the design's `AuthScreen` (welcome → email → 6-digit
@@ -20,6 +22,7 @@ export default function PrivyLoginForm() {
   const router = useRouter();
   const toast = useToast();
   const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   const { sendCode, loginWithCode } = useLoginWithEmail();
   const { loginWithPasskey } = useLoginWithPasskey();
@@ -27,12 +30,34 @@ export default function PrivyLoginForm() {
 
   const goApp = useCallback(() => router.replace('/app'), [router]);
 
+  // Tick the resend cooldown down to zero.
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  const startCooldown = useCallback(() => setCooldown(RESEND_COOLDOWN), []);
+
   // Send the real OTP, then let the view model advance the UI to the code step.
   const doSendCode = useCallback(() => {
     if (!EMAIL_RE.test(v.email)) return;
     sendCode({ email: v.email }).catch(() => toast.show('Couldn’t send the code — check the address and try again.', { tone: 'danger' }));
+    startCooldown();
     v.sendCode();
-  }, [v, sendCode, toast]);
+  }, [v, sendCode, toast, startCooldown]);
+
+  // Resend the code to the same address, rate-limited by the cooldown.
+  const doResendCode = useCallback(async () => {
+    if (cooldown > 0 || !EMAIL_RE.test(v.email)) return;
+    startCooldown();
+    try {
+      await sendCode({ email: v.email });
+      toast.show('New code sent.', { tone: 'success' });
+    } catch {
+      toast.show('Couldn’t resend the code. Try again in a moment.', { tone: 'danger' });
+    }
+  }, [cooldown, v.email, startCooldown, sendCode, toast]);
 
   const doVerifyCode = useCallback(async () => {
     if (!v.code || v.code.length < 6) return;
@@ -87,9 +112,11 @@ export default function PrivyLoginForm() {
       onCodeKey: (e: { key: string }) => {
         if (e.key === 'Enter') doVerifyCode();
       },
+      resendCode: doResendCode,
+      resendLabel: cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code',
       goLanding: () => router.push('/'),
     }),
-    [v, doPasskey, passkeyBusy, doSendCode, doVerifyCode, router],
+    [v, doPasskey, passkeyBusy, doSendCode, doVerifyCode, doResendCode, cooldown, router],
   );
 
   return <AuthScreen v={authVals} />;
