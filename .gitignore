@@ -30,10 +30,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — never committed, including the example template.
 .env*
-# ...but the placeholder template is committed on purpose (§83).
-!.env.example
 
 # vercel
 .vercel
