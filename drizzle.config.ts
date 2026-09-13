@@ -11,6 +11,8 @@ export default defineConfig({
   dialect: 'postgresql',
   dbCredentials: {
     url: process.env.DATABASE_URL ?? '',
+    // Supabase (and most hosted Postgres) require TLS; skip only for local Postgres.
+    ssl: /@(localhost|127\.0\.0\.1)/.test(process.env.DATABASE_URL ?? '') ? false : 'require',
   },
   strict: true,
   verbose: true,

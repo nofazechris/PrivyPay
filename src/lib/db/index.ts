@@ -30,8 +30,11 @@ export function getDb(): Db {
     throw new DbNotConfiguredError();
   }
   // One connection for the process; postgres.js pools internally. `prepare: false` is friendly
-  // to Supabase's transaction pooler.
-  client = postgres(url, { prepare: false });
+  // to Supabase's transaction pooler. Remote hosts (Supabase) require TLS; local dev Postgres
+  // does not, so only enable it off-localhost unless the URL already asks for it.
+  const isLocal = /@(localhost|127\.0\.0\.1|\[::1\])/.test(url);
+  const urlAsksSsl = /[?&]sslmode=/.test(url);
+  client = postgres(url, { prepare: false, ssl: isLocal || urlAsksSsl ? undefined : 'require' });
   db = drizzle(client, { schema });
   return db;
 }
