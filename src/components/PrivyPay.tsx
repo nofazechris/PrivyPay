@@ -32,12 +32,16 @@ export default function PrivyPay({
   // Override the demo's enterApp with the real sign-in trigger when one is provided.
   const landingVals = useMemo(() => (onGetStarted ? { ...v, enterApp: onGetStarted } : v), [v, onGetStarted]);
 
+  // In the app, the sidebar logo must stay within the dashboard (go to its home), not jump to
+  // the marketing landing — the app is a distinct surface from the landing page.
+  const appVals = useMemo(() => ({ ...v, goLanding: v.goHome }), [v]);
+
   return (
     <div style={{ minHeight: '100vh', background: '#F6F7F9' }}>
       {v.isLanding ? <LandingScreen v={landingVals} refs={heroRefs} /> : null}
       {v.isAuth ? <AuthScreen v={v} /> : null}
       {v.isOnboarding ? <OnboardingScreen v={v} /> : null}
-      {v.isApp ? <AppScreen v={v} /> : null}
+      {v.isApp ? <AppScreen v={appVals} /> : null}
     </div>
   );
 }

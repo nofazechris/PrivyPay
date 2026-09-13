@@ -792,6 +792,9 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing') {
       goActivity: nav('payments'),
       goActivityKey: keyFor(nav('payments')),
       goWallet: nav('wallet'),
+      // Dashboard "home" — used for the app logo, which must stay inside the app rather than
+      // navigate to the marketing landing.
+      goHome: nav('overview'),
 
       balanceStr: money(s.balance),
       balanceChange: '+$314.50 this month',

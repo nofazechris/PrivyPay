@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLoginWithEmail, useLoginWithPasskey } from '@privy-io/react-auth';
+import { useLoginWithEmail, useLoginWithPasskey, useSignupWithPasskey } from '@privy-io/react-auth';
 import { useViewModel } from '@/lib/viewModel';
 import { useToast } from '@/components/ui';
 import AuthScreen from '@/components/screens/AuthScreen';
@@ -23,6 +23,7 @@ export default function PrivyLoginForm() {
 
   const { sendCode, loginWithCode } = useLoginWithEmail();
   const { loginWithPasskey } = useLoginWithPasskey();
+  const { signupWithPasskey } = useSignupWithPasskey();
 
   const goApp = useCallback(() => router.replace('/app'), [router]);
 
@@ -43,18 +44,28 @@ export default function PrivyLoginForm() {
     }
   }, [v.code, loginWithCode, goApp, toast]);
 
+  // Passkey: log in with an existing passkey, and if the user has none yet, create one
+  // (register a new passkey + account). This is what lets a first-time user sign up with a
+  // passkey rather than hitting a login that always fails for lack of a credential.
   const doPasskey = useCallback(async () => {
     if (passkeyBusy) return;
     setPasskeyBusy(true);
     try {
       await loginWithPasskey();
       goApp();
+      return;
     } catch {
-      toast.show('Passkey sign-in was cancelled or failed.', { tone: 'danger' });
+      // No usable passkey for this device/account — fall through to creating one.
+    }
+    try {
+      await signupWithPasskey();
+      goApp();
+    } catch {
+      toast.show('Passkey wasn’t completed. Try again, or use your email.', { tone: 'danger' });
     } finally {
       setPasskeyBusy(false);
     }
-  }, [passkeyBusy, loginWithPasskey, goApp, toast]);
+  }, [passkeyBusy, loginWithPasskey, signupWithPasskey, goApp, toast]);
 
   // Keep the design's UI/step values; replace the five money-path handlers with real auth.
   const authVals = useMemo(
