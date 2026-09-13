@@ -14,7 +14,7 @@ export default function AuthScreen({ v }: { v: Vals }) {
             </span>
           </div>
           <h1 style={{ "fontSize": "27px", "letterSpacing": "-.03em", "fontWeight": "600", "margin": "26px 0 0" }}>
-            {"Create your account"}
+            {"Sign in to PrivyPay"}
           </h1>
           <p style={{ "fontSize": "15px", "color": "#5B6472", "lineHeight": "1.6", "margin": "10px 0 24px" }}>
             {v.authSub}

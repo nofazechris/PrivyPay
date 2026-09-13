@@ -22,6 +22,10 @@ export default function PrivyLoginForm() {
   const router = useRouter();
   const toast = useToast();
   const [passkeyBusy, setPasskeyBusy] = useState(false);
+  // After a failed passkey login on a device with no credential, switch the button to an
+  // explicit "create" so the next click starts a fresh WebAuthn gesture (create needs its own
+  // user activation).
+  const [createMode, setCreateMode] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
   const { sendCode, loginWithCode } = useLoginWithEmail();
@@ -69,41 +73,55 @@ export default function PrivyLoginForm() {
     }
   }, [v.code, loginWithCode, goApp, toast]);
 
-  // Passkey. This is a "Create your account" surface, so the primary action creates a passkey
-  // (single WebAuthn call, bound to the click's user activation — chaining a second call would
-  // lose that activation and the browser would block it). If the user already has a passkey,
-  // signup fails and we fall back to logging in. Real errors are logged so a misconfiguration
-  // (e.g. passkey signup not enabled in the Privy dashboard) is diagnosable.
+  // Passkey — one button that works for everyone:
+  //  • Returning users log in instantly (loginWithPasskey), so "log back in" is a single tap.
+  //  • New users have no credential, so login fails and we create one (signupWithPasskey) in
+  //    the same gesture when the browser still allows it.
+  //  • If the create is blocked (a WebAuthn create needs its own user activation, which the
+  //    failed login may have consumed), we flip the button to an explicit "Create a passkey"
+  //    so the next tap starts a clean gesture. Login-first also means an existing user never
+  //    accidentally creates a second account.
   const doPasskey = useCallback(async () => {
     if (passkeyBusy) return;
     setPasskeyBusy(true);
     try {
-      await signupWithPasskey();
-      goApp();
-    } catch (signupErr) {
-      console.error('[passkey] signup failed:', signupErr);
-      try {
-        await loginWithPasskey();
+      if (createMode) {
+        await signupWithPasskey();
         goApp();
-      } catch (loginErr) {
-        console.error('[passkey] login failed:', loginErr);
-        const detail = signupErr instanceof Error ? signupErr.message : '';
-        toast.show(detail ? `Passkey failed: ${detail}` : 'Passkey wasn’t completed. Try again, or use your email.', {
-          tone: 'danger',
+        return;
+      }
+      await loginWithPasskey();
+      goApp();
+    } catch (loginErr) {
+      console.error('[passkey] login failed:', loginErr);
+      try {
+        await signupWithPasskey();
+        goApp();
+      } catch (signupErr) {
+        console.error('[passkey] signup failed:', signupErr);
+        setCreateMode(true);
+        toast.show('No passkey found on this device — tap “Create a passkey” to set one up.', {
+          tone: 'neutral',
           duration: 4500,
         });
       }
     } finally {
       setPasskeyBusy(false);
     }
-  }, [passkeyBusy, signupWithPasskey, loginWithPasskey, goApp, toast]);
+  }, [passkeyBusy, createMode, loginWithPasskey, signupWithPasskey, goApp, toast]);
+
+  const passkeyLabel = passkeyBusy
+    ? 'Waiting for your device…'
+    : createMode
+      ? 'Create a passkey'
+      : 'Continue with a passkey';
 
   // Keep the design's UI/step values; replace the five money-path handlers with real auth.
   const authVals = useMemo(
     () => ({
       ...v,
       usePasskey: doPasskey,
-      passkeyLabel: passkeyBusy ? 'Waiting for your device…' : 'Continue with a passkey',
+      passkeyLabel,
       sendCode: doSendCode,
       onEmailKey: (e: { key: string }) => {
         if (e.key === 'Enter') doSendCode();
@@ -116,7 +134,7 @@ export default function PrivyLoginForm() {
       resendLabel: cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code',
       goLanding: () => router.push('/'),
     }),
-    [v, doPasskey, passkeyBusy, doSendCode, doVerifyCode, doResendCode, cooldown, router],
+    [v, doPasskey, passkeyLabel, doSendCode, doVerifyCode, doResendCode, cooldown, router],
   );
 
   return <AuthScreen v={authVals} />;
