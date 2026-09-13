@@ -4,29 +4,41 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import PrivyPay from '@/components/PrivyPay';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useProfile } from '@/components/auth/useProfile';
 import { Spinner, Button, Text } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
 
 /**
- * Protected application route (§134 Stage 3).
+ * Protected application route (§134 Stage 3–4).
  *
- * Unauthenticated visitors are sent back to the marketing landing; the authenticated
- * dashboard renders only once Privy confirms a session. Server-side data endpoints are
- * additionally protected by `getSessionUser` — this gate keeps the UI itself behind sign-in.
+ * Unauthenticated visitors go to the marketing landing; signed-in users without a username go
+ * to onboarding; the dashboard renders only for a signed-in user who has a profile. Server-side
+ * data endpoints are additionally protected by `getSessionUser`. When the database isn't
+ * configured (`unavailable`), the app still renders so local work isn't blocked — onboarding
+ * simply can't gate.
  * (Data shown here is still the in-memory demo until Stages 6–13 wire real balances.)
  */
 export default function AppGate() {
   const { configured, ready, authenticated, logout } = useAuth();
+  const { loading: profileLoading, profile, unavailable } = useProfile();
   const router = useRouter();
 
   useEffect(() => {
-    // Once Privy is ready, bounce anyone who isn't signed in (or if auth isn't configured).
     if (ready && (!configured || !authenticated)) {
       router.replace('/');
     }
   }, [ready, configured, authenticated, router]);
 
-  if (!ready || !configured || !authenticated) {
+  // Signed-in but no username yet → onboarding (unless the DB is unavailable, where we can't
+  // tell and fall through to the app).
+  useEffect(() => {
+    if (ready && authenticated && !profileLoading && !profile && !unavailable) {
+      router.replace('/onboarding');
+    }
+  }, [ready, authenticated, profileLoading, profile, unavailable, router]);
+
+  const gating = !ready || !configured || !authenticated || profileLoading || (!profile && !unavailable);
+  if (gating) {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: color.background }}>
         <div style={{ display: 'grid', gap: '12px', justifyItems: 'center' }}>
