@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
+import { PrivyProvider, usePrivy, useCreateWallet } from '@privy-io/react-auth';
 import { celo, celoSepolia } from 'viem/chains';
 import { color } from '@/lib/design/tokens';
 
@@ -41,6 +41,10 @@ export interface AuthState {
   logout: () => Promise<void>;
   /** Access token for authenticating API calls (Bearer). Null when signed out. */
   getAccessToken: () => Promise<string | null>;
+  /** The provisioned Celo embedded wallet address (from Privy, client-side), or null. */
+  walletAddress: string | null;
+  /** Ensure an embedded wallet exists, creating one if needed; returns its address. */
+  ensureWallet: () => Promise<string | null>;
 }
 
 const unconfigured: AuthState = {
@@ -55,6 +59,8 @@ const unconfigured: AuthState = {
   },
   logout: async () => {},
   getAccessToken: async () => null,
+  walletAddress: null,
+  ensureWallet: async () => null,
 };
 
 const AuthContext = createContext<AuthState>(unconfigured);
@@ -67,8 +73,10 @@ export function useAuth(): AuthState {
 /** Bridges Privy's hook into our stable AuthState shape. Only rendered inside PrivyProvider. */
 function PrivyBridge({ children }: { children: ReactNode }) {
   const privy = usePrivy();
+  const { createWallet } = useCreateWallet();
   const value = useMemo<AuthState>(() => {
     const account = privy.user?.email?.address ?? undefined;
+    const walletAddress = privy.user?.wallet?.address ?? null;
     return {
       configured: true,
       ready: privy.ready,
@@ -77,8 +85,20 @@ function PrivyBridge({ children }: { children: ReactNode }) {
       login: () => privy.login(),
       logout: () => privy.logout(),
       getAccessToken: () => privy.getAccessToken(),
+      walletAddress,
+      ensureWallet: async () => {
+        if (walletAddress) return walletAddress;
+        try {
+          const w = await createWallet();
+          return w?.address ?? null;
+        } catch (e) {
+          // Most commonly "already has a wallet" — read it back from the user object.
+          console.error('[wallet] createWallet failed:', e);
+          return privy.user?.wallet?.address ?? null;
+        }
+      },
     };
-  }, [privy]);
+  }, [privy, createWallet]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

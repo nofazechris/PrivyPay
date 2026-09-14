@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useViewModel } from '@/lib/viewModel';
 import { useHeroBackground } from '@/lib/heroBackground';
+import { shortAddress } from '@/lib/format';
 import LandingScreen from './screens/LandingScreen';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -22,11 +23,6 @@ export interface AppIdentity {
   username?: string;
   /** Full Celo wallet address; truncated for display, copied in full. */
   walletAddress?: string;
-}
-
-/** `0x1234abcd…ef0` → `0x12…ef0`, matching the design's address style. */
-function truncateAddress(a: string): string {
-  return a.length > 10 ? `${a.slice(0, 4)}…${a.slice(-3)}` : a;
 }
 
 export default function PrivyPay({
@@ -56,7 +52,7 @@ export default function PrivyPay({
     }
     if (appIdentity?.walletAddress) {
       const full = appIdentity.walletAddress;
-      merged.walletAddress = truncateAddress(full);
+      merged.walletAddress = shortAddress(full);
       const flash = v.copyAddress; // preserves the "Address copied" feedback
       merged.copyAddress = () => {
         navigator.clipboard?.writeText(full).catch(() => {});

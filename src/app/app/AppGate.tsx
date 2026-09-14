@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import PrivyPay from '@/components/PrivyPay';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useProfile } from '@/components/auth/useProfile';
+import { useWallet } from '@/components/auth/useWallet';
 import { Spinner, Button, Text } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
 
@@ -21,6 +22,7 @@ import { color } from '@/lib/design/tokens';
 export default function AppGate() {
   const { configured, ready, authenticated, logout } = useAuth();
   const { loading: profileLoading, profile, wallet, unavailable } = useProfile();
+  const { address: walletAddress } = useWallet();
   const router = useRouter();
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export default function AppGate() {
     <div style={{ position: 'relative', minHeight: '100vh' }}>
       <PrivyPay
         startView="app"
-        appIdentity={{ username: profile?.username, walletAddress: wallet?.address }}
+        appIdentity={{ username: profile?.username, walletAddress: walletAddress ?? wallet?.address }}
       />
       {/* Minimal session control for Stage 3; folds into the real account menu at Stage 10. */}
       <div style={{ position: 'fixed', top: 14, right: 16, zIndex: 50 }}>

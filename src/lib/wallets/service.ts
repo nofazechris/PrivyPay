@@ -57,3 +57,26 @@ export async function syncWallet(userId: string, privyDid: string): Promise<Stor
 
   return { address: fromPrivy.address, chainId, providerWalletId: fromPrivy.walletId };
 }
+
+/**
+ * Persist an address for the active network. Prefers Privy's authoritative record; if Privy
+ * hasn't caught up yet (the client just created the wallet), falls back to the client-supplied
+ * address, which is the authenticated user's own public wallet address. Idempotent on
+ * (user, chain).
+ */
+export async function persistWallet(userId: string, privyDid: string, clientAddress?: string): Promise<StoredWallet | null> {
+  const synced = await syncWallet(userId, privyDid);
+  if (synced) return synced;
+  if (!clientAddress) return null;
+
+  const db = getDb();
+  const chainId = activeNetwork.chainId;
+  await db
+    .insert(schema.wallets)
+    .values({ userId, chainId, address: clientAddress, provider: 'privy' })
+    .onConflictDoUpdate({
+      target: [schema.wallets.userId, schema.wallets.chainId],
+      set: { address: clientAddress, updatedAt: new Date() },
+    });
+  return { address: clientAddress, chainId, providerWalletId: null };
+}
