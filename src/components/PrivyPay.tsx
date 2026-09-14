@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useViewModel } from '@/lib/viewModel';
 import { useHeroBackground } from '@/lib/heroBackground';
 import { shortAddress } from '@/lib/format';
+import { addressQr } from '@/lib/qr';
 import LandingScreen from './screens/LandingScreen';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -50,21 +51,41 @@ export default function PrivyPay({
   // Override the demo's enterApp with the real sign-in trigger when one is provided.
   const landingVals = useMemo(() => (onGetStarted ? { ...v, enterApp: onGetStarted } : v), [v, onGetStarted]);
 
+  // Real scannable QR of the wallet address (§72), computed only when the address changes —
+  // not on every render, since QR generation isn't free.
+  const address = appIdentity?.walletAddress;
+  const qr = useMemo(
+    () => (address ? { large: addressQr(address, 6), small: addressQr(address, 4) } : null),
+    [address],
+  );
+
   // In the app: keep the logo inside the dashboard, and replace the demo identity (username,
-  // wallet address) with the signed-in user's real values when available.
+  // wallet address, balance, QR) with the signed-in user's real values when available.
   const appVals = useMemo(() => {
     const merged = { ...v, goLanding: v.goHome };
     if (appIdentity?.username) {
       merged.handleInput = appIdentity.username;
       merged.handleDisplay = '@' + appIdentity.username;
     }
-    if (appIdentity?.walletAddress) {
-      const full = appIdentity.walletAddress;
-      merged.walletAddress = shortAddress(full);
+    if (address) {
+      merged.walletAddress = shortAddress(address);
       const flash = v.copyAddress; // preserves the "Address copied" feedback
       merged.copyAddress = () => {
-        navigator.clipboard?.writeText(full).catch(() => {});
+        navigator.clipboard?.writeText(address).catch(() => {});
         flash();
+      };
+      if (qr) {
+        merged.qrLarge = qr.large;
+        merged.qrSmall = qr.small;
+      }
+      const flashShare = v.shareReceive;
+      merged.shareReceive = () => {
+        if (typeof navigator !== 'undefined' && navigator.share) {
+          navigator.share({ title: 'My PrivyPay address', text: address }).catch(() => {});
+        } else {
+          navigator.clipboard?.writeText(address).catch(() => {});
+        }
+        flashShare();
       };
     }
     if (appIdentity?.balance !== undefined) {
@@ -73,7 +94,7 @@ export default function PrivyPay({
       merged.balanceChange = '';
     }
     return merged;
-  }, [v, appIdentity]);
+  }, [v, appIdentity, address, qr]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#F6F7F9' }}>
