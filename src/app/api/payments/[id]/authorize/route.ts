@@ -24,6 +24,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
     return NextResponse.json({
       authorizationId: res.authorizationId,
+      // The exact wallet the client must sign with — the one policy checked and authorized.
+      from: res.from,
       prepared: {
         to: res.prepared.to,
         data: res.prepared.data,

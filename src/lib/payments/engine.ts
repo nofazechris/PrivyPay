@@ -132,7 +132,7 @@ async function loadOwned(paymentId: string, userId: string): Promise<PaymentRow 
 }
 
 export async function authorizePayment(input: { paymentId: string; userId: string; senderWalletAddress: string }): Promise<
-  { ok: true; authorizationId: string; prepared: PreparedUsdcTransfer } | { ok: false; error: string }
+  { ok: true; authorizationId: string; prepared: PreparedUsdcTransfer; from: string } | { ok: false; error: string }
 > {
   const payment = await loadOwned(input.paymentId, input.userId);
   if (!payment) return { ok: false, error: 'Payment not found.' };
@@ -160,7 +160,9 @@ export async function authorizePayment(input: { paymentId: string; userId: strin
 
   const decimals = getToken(payment.token, activeNetwork.network)?.decimals ?? 6;
   const prepared = buildUsdcTransfer(payment.recipientAddress, formatUnits(BigInt(payment.amount), decimals));
-  return { ok: true, authorizationId: auth.id, prepared };
+  // The client must sign with exactly this wallet — the one policy validated and authorized —
+  // never "whatever wallet is first" (§80). A user can hold more than one embedded wallet.
+  return { ok: true, authorizationId: auth.id, prepared, from: input.senderWalletAddress };
 }
 
 export async function recordBroadcast(input: {

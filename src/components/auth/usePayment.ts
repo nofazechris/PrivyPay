@@ -26,6 +26,17 @@ export interface PayResult {
   error?: string;
 }
 
+/** True when an error means the wallet can't afford the transfer + gas (retrying won't help). */
+function isInsufficientFunds(e: unknown): boolean {
+  const s = (e instanceof Error ? `${e.message} ${e.name}` : String(e)).toLowerCase();
+  return (
+    s.includes('gas required exceeds allowance') ||
+    s.includes('insufficient') ||
+    s.includes('exceeds balance') ||
+    s.includes('transfer amount exceeds')
+  );
+}
+
 async function authedFetch(getToken: () => Promise<string | null>, url: string, init?: RequestInit) {
   const token = await getToken();
   return fetch(url, {
@@ -56,15 +67,27 @@ export function usePayment() {
         const authRes = await authedFetch(getAccessToken, `/api/payments/${paymentId}/authorize`, { method: 'POST' });
         const authData = await authRes.json();
         if (!authRes.ok) return { status: 'failed', error: authData.message ?? 'Payment not authorized.' };
-        const { authorizationId, prepared } = authData as {
+        const { authorizationId, prepared, from } = authData as {
           authorizationId: string;
+          from: string;
           prepared: { to: string; data: string; value: string; feeCurrency: string; chainId: number };
         };
 
-        // Sign + broadcast with the user's Privy embedded wallet.
+        // Sign with EXACTLY the wallet the server authorized (§80). A user can hold more than
+        // one embedded wallet; signing with "the first one" can pick a different (empty) wallet
+        // than the one policy validated, which reverts on-chain. Match by address.
         setStage('awaiting_signature');
-        const embedded = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0];
+        const want = from?.toLowerCase();
+        const embedded =
+          wallets.find((w) => w.address?.toLowerCase() === want) ??
+          wallets.find((w) => w.walletClientType === 'privy');
         if (!embedded) return { status: 'failed', error: 'No wallet available to sign.' };
+        if (want && embedded.address?.toLowerCase() !== want) {
+          return {
+            status: 'failed',
+            error: 'Your account wallet isn’t available to sign in this browser. Sign out and back in, then retry.',
+          };
+        }
         const chain = prepared.chainId === celo.id ? celo : celoSepolia;
 
         // Broadcast through our same-origin RPC proxy — the public forno endpoint 403s from
@@ -72,10 +95,9 @@ export function usePayment() {
         const rpcUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/api/rpc';
 
         let txHash: string | undefined;
-        // Preferred path: pay gas in USDC via Celo's fee-currency adapter (§14) — no CELO
-        // needed. This uses a viem client over the embedded wallet so viem can build Celo's
-        // CIP-64 transaction. If Privy can't sign that type yet, fall back to a normal send
-        // (native CELO gas), so the payment still goes through.
+        // Preferred (and only headless) path: pay gas in USDC via Celo's fee-currency adapter
+        // (§14) — no CELO needed, no wallet modal. viem builds Celo's CIP-64 transaction and
+        // Privy signs it.
         try {
           const account = await toViemAccount({ wallet: embedded });
           const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
@@ -86,7 +108,12 @@ export function usePayment() {
             feeCurrency: prepared.feeCurrency as `0x${string}`,
           });
         } catch (feeErr) {
-          console.error('[payment] fee-abstraction (gas in USDC) failed; retrying with native gas:', feeErr);
+          // If the wallet simply can't afford it, native gas won't help — fail cleanly with a
+          // readable message instead of popping a wallet modal that demands CELO (§14 UX).
+          if (isInsufficientFunds(feeErr)) throw feeErr;
+          // Otherwise the signer may not support CIP-64 yet — fall back to a normal send with
+          // native CELO gas so the payment can still go through.
+          console.error('[payment] fee-abstraction (gas in USDC) unavailable; retrying with native gas:', feeErr);
           const provider = await embedded.getEthereumProvider();
           const walletClient = createWalletClient({ account: embedded.address as `0x${string}`, chain, transport: custom(provider) });
           txHash = await walletClient.sendTransaction({
@@ -123,8 +150,11 @@ export function usePayment() {
       } catch (e) {
         console.error('[payment] failed:', e);
         setStage('failed');
+        // Turn the common failures into plain language; the full error is in the console above.
+        if (isInsufficientFunds(e)) {
+          return { status: 'failed', error: 'Not enough USDC in your wallet to cover this payment.' };
+        }
         const msg = e instanceof Error ? e.message : 'Payment failed.';
-        // Keep the toast short and readable; the full error is in the console above.
         return { status: 'failed', error: msg.length > 120 ? msg.slice(0, 117) + '…' : msg };
       }
     },
