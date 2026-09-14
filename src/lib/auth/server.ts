@@ -30,6 +30,21 @@ function getClient(): PrivyClient | null {
   return client;
 }
 
+/** The user's Privy embedded EVM wallet address, or null if none is provisioned yet. */
+export async function getPrivyEmbeddedWallet(
+  privyDid: string,
+): Promise<{ address: string; walletId: string | null } | null> {
+  const privy = getClient();
+  if (!privy) return null;
+  const user = await privy.getUser(privyDid);
+  const wallet = user.linkedAccounts.find(
+    (a) => a.type === 'wallet' && a.walletClientType === 'privy' && a.chainType === 'ethereum',
+  );
+  if (!wallet || !('address' in wallet) || typeof wallet.address !== 'string') return null;
+  const walletId = 'id' in wallet && typeof wallet.id === 'string' ? wallet.id : null;
+  return { address: wallet.address, walletId };
+}
+
 /**
  * Extract the access token from a request: `Authorization: Bearer …` first (how the client
  * attaches it to API calls), falling back to the `privy-token` cookie for same-origin

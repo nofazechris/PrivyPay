@@ -758,6 +758,8 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing') {
       obReady: s.obStep === 'ready',
       handleInput: s.handleInput,
       handleDisplay: handle,
+      // Demo placeholder; AppGate overrides this with the real provisioned Celo address.
+      walletAddress: '0x8A…29F',
       handleOk: s.handleInput.length > 2,
       handleOpacity: s.handleInput.length > 2 ? '1' : '.45',
       onHandle: (e: ChangeEvent<HTMLInputElement>) => setState({ handleInput: e.target.value.replace(/[^a-z0-9_]/gi, '').toLowerCase().slice(0, 18) }),

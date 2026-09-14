@@ -7,6 +7,8 @@ export interface ProfileState {
   loading: boolean;
   /** The user's claimed username, or null if they have none yet (→ onboarding). */
   profile: { username: string } | null;
+  /** The provisioned Celo wallet address, or null if not synced yet. */
+  wallet: { address: string } | null;
   /** True when the profile couldn't be determined (e.g. database not configured). */
   unavailable: boolean;
   refresh: () => void;
@@ -21,6 +23,7 @@ export function useProfile(): ProfileState {
   const { ready, authenticated, getAccessToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ username: string } | null>(null);
+  const [wallet, setWallet] = useState<{ address: string } | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [tick, setTick] = useState(0);
 
@@ -50,8 +53,12 @@ export function useProfile(): ProfileState {
           setUnavailable(true);
           setProfile(null);
         } else {
-          const data = (await res.json()) as { profile: { username: string } | null };
+          const data = (await res.json()) as {
+            profile: { username: string } | null;
+            wallet: { address: string } | null;
+          };
           setProfile(data.profile ?? null);
+          setWallet(data.wallet ?? null);
         }
       } catch {
         if (active) {
@@ -68,5 +75,5 @@ export function useProfile(): ProfileState {
     };
   }, [ready, authenticated, getAccessToken, tick]);
 
-  return { loading, profile, unavailable, refresh };
+  return { loading, profile, wallet, unavailable, refresh };
 }

@@ -86,7 +86,7 @@ export default function OnboardingScreen({ v }: { v: Vals }) {
                     {"Celo payment wallet"}
                   </div>
                   <div style={{ "fontFamily": "var(--font-geist-mono),monospace", "fontSize": "16px", "marginTop": "6px" }}>
-                    {"0x8A…29F"}
+                    {v.walletAddress}
                   </div>
                   <div style={{ "display": "flex", "alignItems": "center", "gap": "7px", "marginTop": "14px" }}>
                     <span style={{ "width": "6px", "height": "6px", "borderRadius": "50%", "background": "#3FBF85", "display": "inline-block" }}></span>

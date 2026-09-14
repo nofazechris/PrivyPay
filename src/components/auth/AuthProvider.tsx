@@ -98,8 +98,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           accentColor: color.primary,
           landingHeader: 'Sign in to PrivyPay',
         },
-        // Wallet provisioning is Stage 5; keep creation off during auth-only work.
-        embeddedWallets: { ethereum: { createOnLogin: 'off' } },
+        // Provision a Celo (EVM) embedded wallet automatically for users who don't have one,
+        // with no seed phrase or connect-wallet step (§10). Keys stay in Privy's secure
+        // custody and never reach us (§11).
+        embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
         // Celo is the only settlement network; testnet is the default until launch.
         defaultChain: celoSepolia,
         supportedChains: [celoSepolia, celo],

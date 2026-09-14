@@ -52,7 +52,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                   </span>
                 </div>
                 <div style={{ "fontFamily": "var(--font-geist-mono),monospace", "fontSize": "12px", "color": "#5F6878", "marginTop": "6px" }}>
-                  {"0x8A…29F"}
+                  {v.walletAddress}
                 </div>
               </div>
             </div>
@@ -690,7 +690,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                     </span>
                   </div>
                   <div style={{ "fontFamily": "var(--font-geist-mono),monospace", "fontSize": "15px", "marginTop": "8px", "color": "#D3D8E0" }}>
-                    {"0x8A…29F"}
+                    {v.walletAddress}
                   </div>
                   <div style={{ "height": "1px", "background": "#212938", "margin": "22px 0" }}></div>
                   <div style={{ "fontSize": "13px", "color": "#A3ACBC" }}>
@@ -957,7 +957,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                       {"Wallet active"}
                     </div>
                     <div style={{ "fontFamily": "var(--font-geist-mono),monospace", "fontSize": "13px", "color": "#5B6472", "marginTop": "4px" }}>
-                      {v.handleDisplay}{" · 0x8A…29F"}
+                      {v.handleDisplay}{" · "}{v.walletAddress}
                     </div>
                   </div>
                   <button className="scp5" onClick={v.goWallet} style={{ "border": "1px solid #DCE0E7", "background": "#fff", "fontSize": "13.5px", "fontWeight": "500", "padding": "10px 16px", "borderRadius": "10px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
@@ -1197,7 +1197,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                       {v.qrLarge}
                     </div>
                     <div style={{ "fontFamily": "var(--font-geist-mono),monospace", "fontSize": "13px", "color": "#5B6472", "textAlign": "center", "marginTop": "16px" }}>
-                      {"0x8A…29F"}
+                      {v.walletAddress}
                     </div>
                     <p style={{ "fontSize": "12.5px", "color": "#6C7484", "textAlign": "center", "lineHeight": "1.6", "margin": "12px auto 0", "maxWidth": "300px" }}>
                       {"Share your username or address to receive supported stablecoins on Celo."}

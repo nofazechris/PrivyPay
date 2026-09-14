@@ -20,7 +20,7 @@ import { color } from '@/lib/design/tokens';
  */
 export default function AppGate() {
   const { configured, ready, authenticated, logout } = useAuth();
-  const { loading: profileLoading, profile, unavailable } = useProfile();
+  const { loading: profileLoading, profile, wallet, unavailable } = useProfile();
   const router = useRouter();
 
   useEffect(() => {
@@ -53,7 +53,10 @@ export default function AppGate() {
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
-      <PrivyPay startView="app" />
+      <PrivyPay
+        startView="app"
+        appIdentity={{ username: profile?.username, walletAddress: wallet?.address }}
+      />
       {/* Minimal session control for Stage 3; folds into the real account menu at Stage 10. */}
       <div style={{ position: 'fixed', top: 14, right: 16, zIndex: 50 }}>
         <Button size="sm" variant="secondary" onClick={() => logout()}>

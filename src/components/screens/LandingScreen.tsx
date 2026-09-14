@@ -881,7 +881,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
                     {"Celo"}
                   </div>
                   <div style={{ "fontFamily": "var(--font-geist-mono),monospace", "fontSize": "12.5px", "color": "#5B6472", "marginTop": "10px" }}>
-                    {"0x8A…29F"}
+                    {v.walletAddress}
                   </div>
                 </div>
               </div>

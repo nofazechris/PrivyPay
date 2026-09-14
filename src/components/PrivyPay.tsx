@@ -17,12 +17,26 @@ import AppScreen from './screens/AppScreen';
  * in-page fake auth screen. When it's omitted (auth not configured), the original demo flow
  * runs unchanged, so nothing regresses before credentials are set.
  */
+/** Real identity injected into the app view, replacing the demo fixtures. */
+export interface AppIdentity {
+  username?: string;
+  /** Full Celo wallet address; truncated for display, copied in full. */
+  walletAddress?: string;
+}
+
+/** `0x1234abcd…ef0` → `0x12…ef0`, matching the design's address style. */
+function truncateAddress(a: string): string {
+  return a.length > 10 ? `${a.slice(0, 4)}…${a.slice(-3)}` : a;
+}
+
 export default function PrivyPay({
   startView = 'landing',
   onGetStarted,
+  appIdentity,
 }: {
   startView?: 'landing' | 'app';
   onGetStarted?: () => void;
+  appIdentity?: AppIdentity;
 }) {
   const v = useViewModel(startView);
   // The animated backdrop lives here rather than in the view model: it hands out DOM refs,
@@ -32,9 +46,25 @@ export default function PrivyPay({
   // Override the demo's enterApp with the real sign-in trigger when one is provided.
   const landingVals = useMemo(() => (onGetStarted ? { ...v, enterApp: onGetStarted } : v), [v, onGetStarted]);
 
-  // In the app, the sidebar logo must stay within the dashboard (go to its home), not jump to
-  // the marketing landing — the app is a distinct surface from the landing page.
-  const appVals = useMemo(() => ({ ...v, goLanding: v.goHome }), [v]);
+  // In the app: keep the logo inside the dashboard, and replace the demo identity (username,
+  // wallet address) with the signed-in user's real values when available.
+  const appVals = useMemo(() => {
+    const merged = { ...v, goLanding: v.goHome };
+    if (appIdentity?.username) {
+      merged.handleInput = appIdentity.username;
+      merged.handleDisplay = '@' + appIdentity.username;
+    }
+    if (appIdentity?.walletAddress) {
+      const full = appIdentity.walletAddress;
+      merged.walletAddress = truncateAddress(full);
+      const flash = v.copyAddress; // preserves the "Address copied" feedback
+      merged.copyAddress = () => {
+        navigator.clipboard?.writeText(full).catch(() => {});
+        flash();
+      };
+    }
+    return merged;
+  }, [v, appIdentity]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#F6F7F9' }}>
