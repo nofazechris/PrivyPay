@@ -28,6 +28,22 @@ const USDC_ADDRESS: Record<CeloNetwork, string> = {
   sepolia: '0x01C5C0122039549AD1493B8220cABEdD739BC44E',
 };
 
+/**
+ * USDC fee-currency adapters (§14). USDC has 6 decimals, so gas can't be paid with the token
+ * directly — Celo allowlists an 18-decimal adapter that is passed as `feeCurrency` to pay gas
+ * in USDC. Verified from Celo's fee-currencies docs. This is what makes "hold USDC, send USDC,
+ * no CELO for gas" work.
+ */
+const USDC_FEE_ADAPTER: Record<CeloNetwork, string> = {
+  mainnet: '0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B',
+  sepolia: '0xbf1441Ea57f43f35f713431001f35742c88071c7',
+};
+
+/** The fee-currency adapter to pay gas in USDC on a network. */
+export function usdcFeeCurrency(network: CeloNetwork): string {
+  return USDC_FEE_ADAPTER[network];
+}
+
 function usdc(network: CeloNetwork): SupportedToken {
   // Env override applies to the active network only; otherwise use the verified constant.
   const override = network === env.CELO_NETWORK ? (env.CELO_USDC_ADDRESS ?? null) : null;

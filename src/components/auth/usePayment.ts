@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useSendTransaction } from '@privy-io/react-auth';
+import { useWallets, toViemAccount } from '@privy-io/react-auth';
+import { createWalletClient, http } from 'viem';
+import { celo, celoSepolia } from 'viem/chains';
 import { useAuth } from './AuthProvider';
 
 /**
@@ -34,7 +36,7 @@ async function authedFetch(getToken: () => Promise<string | null>, url: string, 
 
 export function usePayment() {
   const { getAccessToken } = useAuth();
-  const { sendTransaction } = useSendTransaction();
+  const { wallets } = useWallets();
   const [stage, setStage] = useState<PayStage>('idle');
 
   const pay = useCallback(
@@ -56,17 +58,23 @@ export function usePayment() {
         if (!authRes.ok) return { status: 'failed', error: authData.message ?? 'Payment not authorized.' };
         const { authorizationId, prepared } = authData as {
           authorizationId: string;
-          prepared: { to: string; data: string; value: string; chainId: number };
+          prepared: { to: string; data: string; value: string; feeCurrency: string; chainId: number };
         };
 
+        // Sign + broadcast with the user's Privy embedded wallet via viem, paying gas in USDC
+        // through Celo's fee-currency adapter (§14) — the user needs no CELO for gas.
         setStage('awaiting_signature');
-        const sent = await sendTransaction({
-          to: prepared.to,
-          data: prepared.data,
+        const embedded = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0];
+        if (!embedded) return { status: 'failed', error: 'No wallet available to sign.' };
+        const account = await toViemAccount({ wallet: embedded });
+        const chain = prepared.chainId === celo.id ? celo : celoSepolia;
+        const walletClient = createWalletClient({ account, chain, transport: http() });
+        const txHash = await walletClient.sendTransaction({
+          to: prepared.to as `0x${string}`,
+          data: prepared.data as `0x${string}`,
           value: BigInt(prepared.value || '0'),
-          chainId: prepared.chainId,
+          feeCurrency: prepared.feeCurrency as `0x${string}`,
         });
-        const txHash = (sent as { hash?: string; transactionHash?: string }).hash ?? (sent as { transactionHash?: string }).transactionHash;
         if (!txHash) return { status: 'failed', error: 'No transaction hash returned.' };
 
         await authedFetch(getAccessToken, `/api/payments/${paymentId}/broadcast`, {
@@ -97,7 +105,7 @@ export function usePayment() {
         return { status: 'failed', error: e instanceof Error ? e.message : 'Payment failed.' };
       }
     },
-    [getAccessToken, sendTransaction],
+    [getAccessToken, wallets],
   );
 
   return { pay, stage };

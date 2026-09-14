@@ -1,6 +1,6 @@
 import 'server-only';
 import { encodeFunctionData, erc20Abi, getAddress, parseUnits, type Address } from 'viem';
-import { activeNetwork, getToken } from '@/lib/config';
+import { activeNetwork, getToken, usdcFeeCurrency } from '@/lib/config';
 
 /**
  * Transaction preparation (§16) with Celo fee abstraction (§14).
@@ -34,6 +34,8 @@ export function buildUsdcTransfer(recipient: string, amountUsdc: string): Prepar
   const to = getAddress(recipient) as Address;
   const amount = parseUnits(amountUsdc, token.decimals);
   const data = encodeFunctionData({ abi: erc20Abi, functionName: 'transfer', args: [to, amount] });
+  // Gas is paid in USDC via the fee-currency adapter — never the token address (§14).
+  const feeCurrency = getAddress(usdcFeeCurrency(activeNetwork.network));
 
-  return { to: usdc, data, feeCurrency: usdc, value: BigInt(0), chainId: activeNetwork.chainId, amount };
+  return { to: usdc, data, feeCurrency, value: BigInt(0), chainId: activeNetwork.chainId, amount };
 }

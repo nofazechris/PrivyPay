@@ -7,5 +7,5 @@ export {
   type CeloNetwork,
   type NetworkConfig,
 } from './networks';
-export { TOKENS, getToken, enabledTokens, type SupportedToken } from './tokens';
+export { TOKENS, getToken, enabledTokens, usdcFeeCurrency, type SupportedToken } from './tokens';
 export { features, type FeatureFlags } from './features';
