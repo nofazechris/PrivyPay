@@ -33,10 +33,10 @@ describe('token registry', () => {
     }
   });
 
-  it('leaves USDC disabled until an address is configured (no unverified address assumed)', () => {
-    // No CELO_USDC_ADDRESS in the test env → must not be enabled.
-    expect(TOKENS.sepolia[0].enabled).toBe(false);
-    expect(TOKENS.sepolia[0].address).toBeNull();
+  it('uses Circle’s verified USDC addresses and enables USDC', () => {
+    expect(TOKENS.mainnet[0].address).toBe('0xcebA9300f2b948710d2653dD7B07f33A8B32118C');
+    expect(TOKENS.sepolia[0].address).toBe('0x01C5C0122039549AD1493B8220cABEdD739BC44E');
+    expect(TOKENS.sepolia[0].enabled).toBe(true);
   });
 });
 

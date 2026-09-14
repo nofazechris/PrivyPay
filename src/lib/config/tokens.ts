@@ -4,12 +4,12 @@ import type { CeloNetwork } from './networks';
 /**
  * Token registry (§15).
  *
- * Token contract addresses are never hard-coded across the app; they live here, keyed by
- * network. USDC is the initial production asset. Its address is read from `CELO_USDC_ADDRESS`
- * rather than committed as a constant, because §15 requires verifying token addresses against
- * an official source before production — an unverified address baked into source is exactly
- * the mistake that rule prevents. A registry entry with no configured address is reported as
- * disabled instead of silently pointing at the wrong contract.
+ * Token contract addresses live here, keyed by network — never hard-coded across the app. USDC
+ * is the initial production asset. The addresses below are Circle's official USDC contracts,
+ * verified against Circle's docs (developers.circle.com/stablecoins/usdc-contract-addresses)
+ * as §15 requires; `CELO_USDC_ADDRESS` can override the active-network value if needed. A
+ * registry entry with no address is reported disabled rather than pointing at the wrong
+ * contract.
  */
 export interface SupportedToken {
   readonly symbol: string;
@@ -22,15 +22,22 @@ export interface SupportedToken {
   readonly feeCurrencySupported: boolean;
 }
 
+// Circle-issued USDC, verified from Circle's official contract-address list.
+const USDC_ADDRESS: Record<CeloNetwork, string> = {
+  mainnet: '0xcebA9300f2b948710d2653dD7B07f33A8B32118C',
+  sepolia: '0x01C5C0122039549AD1493B8220cABEdD739BC44E',
+};
+
 function usdc(network: CeloNetwork): SupportedToken {
-  const address = env.CELO_USDC_ADDRESS ?? null;
+  // Env override applies to the active network only; otherwise use the verified constant.
+  const override = network === env.CELO_NETWORK ? (env.CELO_USDC_ADDRESS ?? null) : null;
+  const address = override ?? USDC_ADDRESS[network];
   return {
     symbol: 'USDC',
     name: 'USD Coin',
     network,
     address,
     decimals: 6,
-    // Enabled only once a (verified) address is configured — never assumed.
     enabled: address !== null,
     feeCurrencySupported: true,
   };

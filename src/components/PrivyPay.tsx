@@ -23,6 +23,14 @@ export interface AppIdentity {
   username?: string;
   /** Full Celo wallet address; truncated for display, copied in full. */
   walletAddress?: string;
+  /** On-chain USDC balance as a decimal string (e.g. "0.00"); replaces the demo balance. */
+  balance?: string;
+}
+
+/** Format a decimal balance string to 2 places for display, e.g. "0" → "0.00". */
+function formatBalance(v: string): string {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : v;
 }
 
 export default function PrivyPay({
@@ -58,6 +66,11 @@ export default function PrivyPay({
         navigator.clipboard?.writeText(full).catch(() => {});
         flash();
       };
+    }
+    if (appIdentity?.balance !== undefined) {
+      merged.balanceStr = formatBalance(appIdentity.balance);
+      // Drop the demo month-over-month delta until real activity stats exist (Stage 13).
+      merged.balanceChange = '';
     }
     return merged;
   }, [v, appIdentity]);
