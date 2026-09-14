@@ -67,6 +67,10 @@ export function usePayment() {
         if (!embedded) return { status: 'failed', error: 'No wallet available to sign.' };
         const chain = prepared.chainId === celo.id ? celo : celoSepolia;
 
+        // Broadcast through our same-origin RPC proxy — the public forno endpoint 403s from
+        // the browser. viem's reads and the raw-tx broadcast all go through here.
+        const rpcUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/api/rpc';
+
         let txHash: string | undefined;
         // Preferred path: pay gas in USDC via Celo's fee-currency adapter (§14) — no CELO
         // needed. This uses a viem client over the embedded wallet so viem can build Celo's
@@ -74,7 +78,7 @@ export function usePayment() {
         // (native CELO gas), so the payment still goes through.
         try {
           const account = await toViemAccount({ wallet: embedded });
-          const walletClient = createWalletClient({ account, chain, transport: http() });
+          const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
           txHash = await walletClient.sendTransaction({
             to: prepared.to as `0x${string}`,
             data: prepared.data as `0x${string}`,
