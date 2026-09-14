@@ -1,0 +1,232 @@
+import 'server-only';
+import { and, eq } from 'drizzle-orm';
+import { formatUnits, parseUnits } from 'viem';
+import { getDb, schema } from '@/lib/db';
+import { activeNetwork, getToken } from '@/lib/config';
+import { normalizeUsername } from '@/lib/users/username';
+import { resolveUsername } from '@/lib/users/service';
+import { buildUsdcTransfer, type PreparedUsdcTransfer } from '@/lib/celo/transaction';
+import { celoClient } from '@/lib/celo/client';
+import { assertTransition, type PaymentStatus } from './state';
+import { evaluatePaymentPolicy } from './policy';
+import { issueAuthorization, consumeAuthorization } from './authorization';
+import type { PaymentRow } from '@/lib/db/schema';
+
+/**
+ * Payment engine (§16). Orchestrates the state machine: preview → authorize → broadcast →
+ * confirm. Signing is done by the user's Privy embedded wallet on the client; the engine owns
+ * validation, policy, single-use authorization, idempotency, persistence and confirmation
+ * monitoring. No payment is ever reported successful before an on-chain receipt (§86).
+ */
+
+const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+
+async function setStatus(paymentId: string, from: PaymentStatus, to: PaymentStatus, extra: Partial<PaymentRow> = {}) {
+  assertTransition(from, to); // throws on an illegal transition
+  const db = getDb();
+  await db.update(schema.payments).set({ status: to, ...extra }).where(eq(schema.payments.id, paymentId));
+}
+
+export interface PreviewInput {
+  senderUserId: string;
+  senderWalletAddress: string;
+  recipient: string; // @username or 0x address
+  amount: string; // human, e.g. "20"
+  token?: string;
+  memo?: string;
+  idempotencyKey: string;
+}
+
+export interface PreviewResult {
+  payment: PaymentRow;
+  prepared: PreparedUsdcTransfer;
+  recipientDisplay: string;
+}
+
+export async function previewPayment(input: PreviewInput): Promise<{ ok: true; result: PreviewResult } | { ok: false; error: string }> {
+  const token = input.token ?? 'USDC';
+  const tokenInfo = getToken(token, activeNetwork.network);
+  if (!tokenInfo || !tokenInfo.enabled || !tokenInfo.address) return { ok: false, error: 'Unsupported token.' };
+
+  const db = getDb();
+
+  // Idempotency (§20): a repeated key returns the same payment rather than creating a second.
+  const existing = await db
+    .select()
+    .from(schema.payments)
+    .where(and(eq(schema.payments.senderUserId, input.senderUserId), eq(schema.payments.idempotencyKey, input.idempotencyKey)))
+    .limit(1);
+  if (existing[0]) {
+    const p = existing[0];
+    return {
+      ok: true,
+      result: {
+        payment: p,
+        prepared: buildUsdcTransfer(p.recipientAddress, formatUnits(BigInt(p.amount), tokenInfo.decimals)),
+        recipientDisplay: p.recipientAddress,
+      },
+    };
+  }
+
+  // Recipient resolution (§23): @username → address, else a raw address.
+  let recipientAddress: string;
+  let recipientUserId: string | null = null;
+  let recipientDisplay: string;
+  const raw = input.recipient.trim();
+  if (raw.startsWith('@') || !ADDRESS_RE.test(raw)) {
+    const resolved = await resolveUsername(normalizeUsername(raw));
+    if (!resolved) return { ok: false, error: `No PrivyPay user @${normalizeUsername(raw)}.` };
+    recipientAddress = await addressForUser(resolved.user.id);
+    recipientUserId = resolved.user.id;
+    recipientDisplay = '@' + resolved.profile.username;
+    if (!recipientAddress) return { ok: false, error: 'That user has no wallet yet.' };
+  } else {
+    recipientAddress = raw;
+    recipientDisplay = raw;
+  }
+
+  let amountRaw: bigint;
+  try {
+    amountRaw = parseUnits(input.amount, tokenInfo.decimals);
+  } catch {
+    return { ok: false, error: 'Invalid amount.' };
+  }
+  if (amountRaw <= BigInt(0)) return { ok: false, error: 'Amount must be greater than zero.' };
+
+  const prepared = buildUsdcTransfer(recipientAddress, input.amount);
+
+  const [payment] = await db
+    .insert(schema.payments)
+    .values({
+      senderUserId: input.senderUserId,
+      recipientUserId,
+      recipientAddress,
+      amount: amountRaw.toString(),
+      token,
+      chainId: activeNetwork.chainId,
+      status: 'PREVIEW',
+      memo: input.memo ?? null,
+      idempotencyKey: input.idempotencyKey,
+    })
+    .returning();
+
+  return { ok: true, result: { payment, prepared, recipientDisplay } };
+}
+
+async function addressForUser(userId: string): Promise<string> {
+  const db = getDb();
+  const rows = await db
+    .select({ address: schema.wallets.address })
+    .from(schema.wallets)
+    .where(and(eq(schema.wallets.userId, userId), eq(schema.wallets.chainId, activeNetwork.chainId)))
+    .limit(1);
+  return rows[0]?.address ?? '';
+}
+
+async function loadOwned(paymentId: string, userId: string): Promise<PaymentRow | null> {
+  const db = getDb();
+  const rows = await db.select().from(schema.payments).where(eq(schema.payments.id, paymentId)).limit(1);
+  const p = rows[0];
+  if (!p || p.senderUserId !== userId) return null; // ownership (§80)
+  return p;
+}
+
+export async function authorizePayment(input: { paymentId: string; userId: string; senderWalletAddress: string }): Promise<
+  { ok: true; authorizationId: string; prepared: PreparedUsdcTransfer } | { ok: false; error: string }
+> {
+  const payment = await loadOwned(input.paymentId, input.userId);
+  if (!payment) return { ok: false, error: 'Payment not found.' };
+  if (payment.status !== 'PREVIEW') return { ok: false, error: 'Payment is not awaiting authorization.' };
+
+  const policy = await evaluatePaymentPolicy({
+    senderWalletAddress: input.senderWalletAddress,
+    recipientAddress: payment.recipientAddress,
+    token: payment.token,
+    amountRaw: payment.amount,
+  });
+  if (policy.effect === 'DENY') return { ok: false, error: policy.reason ?? 'Payment not allowed.' };
+
+  await setStatus(payment.id, 'PREVIEW', 'AWAITING_AUTHORIZATION');
+  await setStatus(payment.id, 'AWAITING_AUTHORIZATION', 'AUTHORIZED', { authorizedAt: new Date() });
+
+  const auth = await issueAuthorization({
+    paymentId: payment.id,
+    userId: input.userId,
+    amount: payment.amount,
+    recipientAddress: payment.recipientAddress,
+    token: payment.token,
+    chainId: payment.chainId,
+  });
+
+  const decimals = getToken(payment.token, activeNetwork.network)?.decimals ?? 6;
+  const prepared = buildUsdcTransfer(payment.recipientAddress, formatUnits(BigInt(payment.amount), decimals));
+  return { ok: true, authorizationId: auth.id, prepared };
+}
+
+export async function recordBroadcast(input: {
+  paymentId: string;
+  userId: string;
+  authorizationId: string;
+  txHash: string;
+}): Promise<{ ok: true; payment: PaymentRow } | { ok: false; error: string }> {
+  if (!/^0x[0-9a-fA-F]{64}$/.test(input.txHash)) return { ok: false, error: 'Invalid transaction hash.' };
+  const payment = await loadOwned(input.paymentId, input.userId);
+  if (!payment) return { ok: false, error: 'Payment not found.' };
+  if (payment.status !== 'AUTHORIZED') return { ok: false, error: 'Payment is not authorized.' };
+
+  const consumed = await consumeAuthorization(input.authorizationId, {
+    paymentId: payment.id,
+    userId: input.userId,
+    amount: payment.amount,
+    recipientAddress: payment.recipientAddress,
+    token: payment.token,
+    chainId: payment.chainId,
+  });
+  if (!consumed.ok) return { ok: false, error: `Authorization ${consumed.reason}.` };
+
+  // AUTHORIZED → … → PENDING (the intermediate states are transient client-side moments).
+  await setStatus(payment.id, 'AUTHORIZED', 'PREPARING');
+  await setStatus(payment.id, 'PREPARING', 'SIGNING');
+  await setStatus(payment.id, 'SIGNING', 'BROADCASTING');
+  await setStatus(payment.id, 'BROADCASTING', 'PENDING', { txHash: input.txHash, broadcastAt: new Date() });
+
+  const db = getDb();
+  const [updated] = await db.select().from(schema.payments).where(eq(schema.payments.id, payment.id)).limit(1);
+  return { ok: true, payment: updated };
+}
+
+/**
+ * Check the on-chain receipt once and settle the payment. Never reports success without a real
+ * confirmation (§86); stays PENDING until the transaction is mined.
+ */
+export async function confirmPayment(input: { paymentId: string; userId: string }): Promise<
+  { ok: true; payment: PaymentRow } | { ok: false; error: string }
+> {
+  const payment = await loadOwned(input.paymentId, input.userId);
+  if (!payment) return { ok: false, error: 'Payment not found.' };
+  if (payment.status !== 'PENDING' || !payment.txHash) {
+    return { ok: true, payment }; // terminal or not yet broadcast — nothing to poll
+  }
+
+  const client = celoClient();
+  let receipt;
+  try {
+    receipt = await client.getTransactionReceipt({ hash: payment.txHash as `0x${string}` });
+  } catch {
+    return { ok: true, payment }; // not mined yet
+  }
+
+  if (receipt.status === 'success') {
+    const fee = (receipt.gasUsed * receipt.effectiveGasPrice).toString();
+    await setStatus(payment.id, 'PENDING', 'CONFIRMED', { confirmedAt: new Date(), feeAmount: fee });
+  } else {
+    await setStatus(payment.id, 'PENDING', 'FAILED', { failedAt: new Date() });
+  }
+  const db = getDb();
+  const [updated] = await db.select().from(schema.payments).where(eq(schema.payments.id, payment.id)).limit(1);
+  return { ok: true, payment: updated };
+}
+
+export async function getPayment(paymentId: string, userId: string): Promise<PaymentRow | null> {
+  return loadOwned(paymentId, userId);
+}

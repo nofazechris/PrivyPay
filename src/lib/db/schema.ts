@@ -61,6 +61,56 @@ export const wallets = pgTable(
   (t) => [uniqueIndex('wallets_user_chain_uq').on(t.userId, t.chainId)],
 );
 
+export const payments = pgTable(
+  'payments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    senderUserId: uuid('sender_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    recipientUserId: uuid('recipient_user_id').references(() => users.id, { onDelete: 'set null' }),
+    recipientAddress: text('recipient_address').notNull(),
+    /** Amount in the token's smallest unit, as a decimal string — never a float (§18). */
+    amount: text('amount').notNull(),
+    token: text('token').notNull(),
+    chainId: integer('chain_id').notNull(),
+    /** PaymentStatus enum value; the state machine is the authority on transitions (§17). */
+    status: text('status').notNull().default('DRAFT'),
+    memo: text('memo'),
+    txHash: text('tx_hash'),
+    feeAmount: text('fee_amount'),
+    /** Makes execution idempotent (§20): the same key resolves to the same payment. */
+    idempotencyKey: text('idempotency_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    authorizedAt: timestamp('authorized_at', { withTimezone: true }),
+    broadcastAt: timestamp('broadcast_at', { withTimezone: true }),
+    confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+    failedAt: timestamp('failed_at', { withTimezone: true }),
+  },
+  (t) => [uniqueIndex('payments_sender_idem_uq').on(t.senderUserId, t.idempotencyKey)],
+);
+
+export const authorizations = pgTable('authorizations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  paymentId: uuid('payment_id')
+    .notNull()
+    .references(() => payments.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  // Bound to every payment parameter so an approval can't be replayed against a different one (§46).
+  amount: text('amount').notNull(),
+  recipientAddress: text('recipient_address').notNull(),
+  token: text('token').notNull(),
+  chainId: integer('chain_id').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  /** Set when consumed; single-use — a second consume is rejected. */
+  consumedAt: timestamp('consumed_at', { withTimezone: true }),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type ProfileRow = typeof profiles.$inferSelect;
 export type WalletRow = typeof wallets.$inferSelect;
+export type PaymentRow = typeof payments.$inferSelect;
+export type AuthorizationRow = typeof authorizations.$inferSelect;

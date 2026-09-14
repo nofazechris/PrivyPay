@@ -15,6 +15,13 @@
       "when": 1789331095401,
       "tag": "0001_first_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789383288533,
+      "tag": "0002_fearless_scourge",
+      "breakpoints": true
     }
   ]
 }
