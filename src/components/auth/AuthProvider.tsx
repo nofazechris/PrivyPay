@@ -121,7 +121,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Provision a Celo (EVM) embedded wallet automatically for users who don't have one,
         // with no seed phrase or connect-wallet step (§10). Keys stay in Privy's secure
         // custody and never reach us (§11).
-        embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
+        //
+        // `showWalletUIs: false` — PrivyPay is the authorization surface (the agent card /
+        // send sheet "Confirm payment" step, §16/§46). We sign headlessly via viem so there's
+        // no second, redundant Privy confirmation modal and no blank-screen flash before it.
+        embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' }, showWalletUIs: false },
         // Celo is the only settlement network; testnet is the default until launch.
         defaultChain: celoSepolia,
         supportedChains: [celoSepolia, celo],

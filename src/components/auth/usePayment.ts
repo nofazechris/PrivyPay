@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useWallets, toViemAccount } from '@privy-io/react-auth';
-import { createWalletClient, http, custom } from 'viem';
+import { createWalletClient, http } from 'viem';
 import { celo, celoSepolia } from 'viem/chains';
 import { useAuth } from './AuthProvider';
 
@@ -90,38 +90,21 @@ export function usePayment() {
         }
         const chain = prepared.chainId === celo.id ? celo : celoSepolia;
 
-        // Broadcast through our same-origin RPC proxy — the public forno endpoint 403s from
-        // the browser. viem's reads and the raw-tx broadcast all go through here.
+        // Prepare + broadcast through our same-origin RPC proxy — the public forno endpoint
+        // 403s from the browser. viem's gas/nonce reads and the raw-tx broadcast all go here.
         const rpcUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/api/rpc';
 
-        let txHash: string | undefined;
-        // Preferred (and only headless) path: pay gas in USDC via Celo's fee-currency adapter
-        // (§14) — no CELO needed, no wallet modal. viem builds Celo's CIP-64 transaction and
-        // Privy signs it.
-        try {
-          const account = await toViemAccount({ wallet: embedded });
-          const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
-          txHash = await walletClient.sendTransaction({
-            to: prepared.to as `0x${string}`,
-            data: prepared.data as `0x${string}`,
-            value: BigInt(prepared.value || '0'),
-            feeCurrency: prepared.feeCurrency as `0x${string}`,
-          });
-        } catch (feeErr) {
-          // If the wallet simply can't afford it, native gas won't help — fail cleanly with a
-          // readable message instead of popping a wallet modal that demands CELO (§14 UX).
-          if (isInsufficientFunds(feeErr)) throw feeErr;
-          // Otherwise the signer may not support CIP-64 yet — fall back to a normal send with
-          // native CELO gas so the payment can still go through.
-          console.error('[payment] fee-abstraction (gas in USDC) unavailable; retrying with native gas:', feeErr);
-          const provider = await embedded.getEthereumProvider();
-          const walletClient = createWalletClient({ account: embedded.address as `0x${string}`, chain, transport: custom(provider) });
-          txHash = await walletClient.sendTransaction({
-            to: prepared.to as `0x${string}`,
-            data: prepared.data as `0x${string}`,
-            value: BigInt(prepared.value || '0'),
-          });
-        }
+        // Sign headlessly with viem over the Privy embedded wallet — no wallet modal (our
+        // "Confirm payment" step is the authorization surface). A standard EIP-1559 (type 2)
+        // transfer; gas is paid in native CELO. Gas-in-USDC needs Celo's CIP-64 type, which
+        // Privy's signer can't produce — that's the gasless-relayer follow-up (§14).
+        const account = await toViemAccount({ wallet: embedded });
+        const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
+        const txHash = await walletClient.sendTransaction({
+          to: prepared.to as `0x${string}`,
+          data: prepared.data as `0x${string}`,
+          value: BigInt(prepared.value || '0'),
+        });
         if (!txHash) return { status: 'failed', error: 'No transaction hash returned.' };
 
         await authedFetch(getAccessToken, `/api/payments/${paymentId}/broadcast`, {
