@@ -9,7 +9,8 @@ import { useWallet } from '@/components/auth/useWallet';
 import { useBalance } from '@/components/auth/useBalance';
 import { usePayment } from '@/components/auth/usePayment';
 import { useActivity } from '@/components/auth/useActivity';
-import { Spinner, Button, Text } from '@/components/ui';
+import { AccountMenu } from '@/components/app/AccountMenu';
+import { Spinner, Text } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
 
 /**
@@ -87,12 +88,7 @@ export default function AppGate() {
         }}
         hooks={hooks}
       />
-      {/* Minimal session control for Stage 3; folds into the real account menu at Stage 10. */}
-      <div style={{ position: 'fixed', top: 14, right: 16, zIndex: 50 }}>
-        <Button size="sm" variant="secondary" onClick={() => logout()}>
-          Sign out
-        </Button>
-      </div>
+      <AccountMenu username={profile?.username} address={walletAddress ?? wallet?.address} onSignOut={() => logout()} />
     </div>
   );
 }
