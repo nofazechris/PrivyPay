@@ -2,7 +2,7 @@ import 'server-only';
 import { and, eq } from 'drizzle-orm';
 import { formatUnits, parseUnits } from 'viem';
 import { getDb, schema } from '@/lib/db';
-import { activeNetwork, getToken } from '@/lib/config';
+import { activeNetwork, getToken, txExplorerUrl } from '@/lib/config';
 import { normalizeUsername } from '@/lib/users/username';
 import { resolveUsername } from '@/lib/users/service';
 import { buildUsdcTransfer, type PreparedUsdcTransfer } from '@/lib/celo/transaction';
@@ -229,4 +229,56 @@ export async function confirmPayment(input: { paymentId: string; userId: string 
 
 export async function getPayment(paymentId: string, userId: string): Promise<PaymentRow | null> {
   return loadOwned(paymentId, userId);
+}
+
+export interface PaymentSummary {
+  id: string;
+  direction: 'out' | 'in';
+  counterparty: string; // @username or short address
+  amount: string; // human, e.g. "20.00"
+  token: string;
+  status: PaymentStatus;
+  txHash: string | null;
+  explorerUrl: string | null;
+  createdAt: Date;
+  confirmedAt: Date | null;
+}
+
+/** The user's payments, newest first, mapped for the activity view (§75). */
+export async function listPayments(userId: string, limit = 50): Promise<PaymentSummary[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: schema.payments.id,
+      recipientUserId: schema.payments.recipientUserId,
+      recipientAddress: schema.payments.recipientAddress,
+      amount: schema.payments.amount,
+      token: schema.payments.token,
+      status: schema.payments.status,
+      txHash: schema.payments.txHash,
+      createdAt: schema.payments.createdAt,
+      confirmedAt: schema.payments.confirmedAt,
+      username: schema.profiles.username,
+    })
+    .from(schema.payments)
+    .leftJoin(schema.profiles, eq(schema.profiles.userId, schema.payments.recipientUserId))
+    .where(eq(schema.payments.senderUserId, userId))
+    .orderBy(schema.payments.createdAt)
+    .limit(limit);
+
+  const decimals = getToken('USDC', activeNetwork.network)?.decimals ?? 6;
+  return rows
+    .map((r) => ({
+      id: r.id,
+      direction: 'out' as const,
+      counterparty: r.username ? '@' + r.username : `${r.recipientAddress.slice(0, 6)}…${r.recipientAddress.slice(-4)}`,
+      amount: formatUnits(BigInt(r.amount), decimals),
+      token: r.token,
+      status: r.status as PaymentStatus,
+      txHash: r.txHash,
+      explorerUrl: r.txHash ? txExplorerUrl(r.txHash) : null,
+      createdAt: r.createdAt,
+      confirmedAt: r.confirmedAt,
+    }))
+    .reverse(); // newest first (orderBy is ascending by default)
 }

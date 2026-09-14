@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useViewModel } from '@/lib/viewModel';
+import { useViewModel, type ViewModelHooks } from '@/lib/viewModel';
 import { useHeroBackground } from '@/lib/heroBackground';
 import { shortAddress } from '@/lib/format';
 import { addressQr } from '@/lib/qr';
+import type { ActivityItem } from '@/components/auth/useActivity';
 import LandingScreen from './screens/LandingScreen';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -26,6 +27,8 @@ export interface AppIdentity {
   walletAddress?: string;
   /** On-chain USDC balance as a decimal string (e.g. "0.00"); replaces the demo balance. */
   balance?: string;
+  /** The user's real payment history; replaces the demo transactions. */
+  activity?: ActivityItem[];
 }
 
 /** Format a decimal balance string to 2 places for display, e.g. "0" → "0.00". */
@@ -34,16 +37,75 @@ function formatBalance(v: string): string {
   return Number.isFinite(n) ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : v;
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  CONFIRMED: 'Completed',
+  PENDING: 'Pending',
+  BROADCASTING: 'Pending',
+  FAILED: 'Failed',
+  REJECTED: 'Rejected',
+  CANCELLED: 'Cancelled',
+  EXPIRED: 'Expired',
+};
+
+function relativeWhen(iso: string): { when: string; group: string } {
+  const d = new Date(iso);
+  const now = new Date();
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const sameDay = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now.getTime() - 86400000).toDateString() === d.toDateString();
+  if (sameDay) return { when: `Today · ${time}`, group: 'Today' };
+  if (yesterday) return { when: `Yesterday · ${time}`, group: 'Yesterday' };
+  return { when: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ` · ${time}`, group: 'Earlier' };
+}
+
+/** Map a real payment to the design's transaction-row shape. */
+function activityToRow(item: ActivityItem) {
+  const out = item.direction === 'out';
+  const { when, group } = relativeWhen(item.createdAt);
+  const handle = item.counterparty;
+  const open = () => {
+    if (item.explorerUrl && typeof window !== 'undefined') window.open(item.explorerUrl, '_blank', 'noopener');
+  };
+  return {
+    id: item.id,
+    dir: item.direction,
+    handle,
+    name: handle,
+    initial: (handle.replace(/^@/, '')[0] ?? '?').toUpperCase(),
+    amount: Number(item.amount),
+    when,
+    group,
+    kind: 'Payment',
+    status: STATUS_LABEL[item.status] ?? item.status,
+    date: new Date(item.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    hash: item.txHash ? shortAddress(item.txHash) : '',
+    sub: when,
+    amountStr: (out ? '-$' : '+$') + formatBalance(item.amount),
+    amountColor: out ? '#0E1420' : '#167A54',
+    avatarBg: out ? '#F1F2F5' : '#E8F3ED',
+    avatarColor: out ? '#5B6472' : '#167A54',
+    onClick: open,
+    onKey: (e: { key: string; preventDefault: () => void }) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        open();
+      }
+    },
+  };
+}
+
 export default function PrivyPay({
   startView = 'landing',
   onGetStarted,
   appIdentity,
+  hooks,
 }: {
   startView?: 'landing' | 'app';
   onGetStarted?: () => void;
   appIdentity?: AppIdentity;
+  hooks?: ViewModelHooks;
 }) {
-  const v = useViewModel(startView);
+  const v = useViewModel(startView, hooks);
   // The animated backdrop lives here rather than in the view model: it hands out DOM refs,
   // which are not view data.
   const heroRefs = useHeroBackground(v.isLanding, v.heroStage);
@@ -92,6 +154,31 @@ export default function PrivyPay({
       merged.balanceStr = formatBalance(appIdentity.balance);
       // Drop the demo month-over-month delta until real activity stats exist (Stage 13).
       merged.balanceChange = '';
+    }
+
+    // Real app: strip every demo fixture. Real payment history replaces the demo transactions;
+    // contacts/requests/recurring have no real data yet (Stages 11–12), so they show as empty
+    // rather than fake. No fake numbers are shown anywhere in the signed-in app.
+    if (appIdentity) {
+      // Real rows carry string ids and a plain-object key event; the view model's row type is
+      // inferred from the demo fixtures, so cast at this merge boundary.
+      const rows = (appIdentity.activity ?? []).map(activityToRow) as unknown as typeof v.recentTxs;
+      merged.recentTxs = rows.slice(0, 4);
+      merged.filteredTxs = rows;
+      merged.noTxs = rows.length === 0;
+      merged.activityGroups = ['Today', 'Yesterday', 'Earlier']
+        .map((label) => ({ label: label.toUpperCase(), rows: rows.filter((r) => r.group === label) }))
+        .filter((g) => g.rows.length);
+
+      const sent = rows.filter((r) => r.dir === 'out').reduce((sum, r) => sum + r.amount, 0);
+      merged.sentMonth = formatBalance(String(sent));
+      merged.receivedMonth = '0.00';
+
+      merged.contactRows = [];
+      merged.noContacts = true;
+      merged.sendSuggestions = [];
+      merged.requestRows = [];
+      merged.recurringRows = [];
     }
     return merged;
   }, [v, appIdentity, address, qr]);

@@ -295,8 +295,20 @@ function parseCmd(raw: string): Intent | null {
 
 // ---------------------------------------------------------------- the hook
 
-export function useViewModel(startView: 'landing' | 'app' = 'landing') {
+/** Real-execution hooks injected by the app; absent on the landing demo (§25, §31). */
+export interface ViewModelHooks {
+  /** Execute a real USDC payment; resolves ok/false with an error message. */
+  executeSend?: (args: { recipient: string; amount: string; memo?: string }) => Promise<{ ok: boolean; error?: string }>;
+}
+
+export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: ViewModelHooks = {}) {
   const [s, setS] = useState<State>(() => initialState(startView));
+
+  // Hooks read through a ref so the action callbacks stay referentially stable.
+  const hooksRef = useRef(hooks);
+  useEffect(() => {
+    hooksRef.current = hooks;
+  }, [hooks]);
 
   // Mirrors `this.state` for reads inside timer callbacks, which outlive the render that
   // scheduled them. Written from an effect so nothing mutates a ref during render.
@@ -390,6 +402,22 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing') {
   const cmdConfirmWith = useCallback((it: Intent | null) => {
     if (!it) return;
     setState({ cmdStage: 'processing' });
+
+    // Real payment path: a send goes through the engine (preview → authorize → sign →
+    // broadcast → confirm). On failure we return to the preview so the user can retry.
+    if (it.kind === 'send' && hooksRef.current.executeSend) {
+      hooksRef.current
+        .executeSend({ recipient: it.handle ?? '', amount: String(it.amount ?? '') })
+        .then((r) => {
+          if (r.ok) setState({ cmdStage: 'done' });
+          else {
+            flash(r.error ?? 'Payment could not be completed.');
+            setState({ cmdStage: 'preview' });
+          }
+        });
+      return;
+    }
+
     cmdTimers.current.push(
       setTimeout(() => {
         if (it.kind === 'send') setState((st) => ({ balance: Math.max(0, st.balance - (it.amount ?? 0)) }));
@@ -418,7 +446,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing') {
         setState({ cmdStage: 'done' });
       }, 1500),
     );
-  }, [setState]);
+  }, [setState, flash]);
 
   const cmdReset = useCallback(() => setState({ cmdStage: 'idle', cmdIntent: null, cmdInput: '' }), [setState]);
 
@@ -444,12 +472,24 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing') {
     }
     if (st.sendStep === 3) {
       setState({ sendStep: 4 });
+      // Real payment through the engine when wired; otherwise the demo transition.
+      if (hooksRef.current.executeSend) {
+        const recipient = st.sendPick ? st.sendPick[0] : st.sendTo;
+        hooksRef.current.executeSend({ recipient, amount: st.sendAmount }).then((r) => {
+          if (r.ok) setState({ sendStep: 5 });
+          else {
+            flash(r.error ?? 'Payment could not be completed.');
+            setState({ sendStep: 3 });
+          }
+        });
+        return;
+      }
       const amt = parseFloat(st.sendAmount) || 0;
       later(() => setState((prev) => ({ sendStep: 5, balance: Math.max(0, prev.balance - amt) })), 1450);
       return;
     }
     if (st.sendStep === 5) setState({ sheet: null });
-  }, [setState, later]);
+  }, [setState, later, flash]);
 
   const nav = useCallback(
     (page: Page) => () => {

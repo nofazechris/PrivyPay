@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import PrivyPay from '@/components/PrivyPay';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useProfile } from '@/components/auth/useProfile';
 import { useWallet } from '@/components/auth/useWallet';
 import { useBalance } from '@/components/auth/useBalance';
+import { usePayment } from '@/components/auth/usePayment';
+import { useActivity } from '@/components/auth/useActivity';
 import { Spinner, Button, Text } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
 
@@ -24,8 +26,26 @@ export default function AppGate() {
   const { configured, ready, authenticated, logout } = useAuth();
   const { loading: profileLoading, profile, wallet, unavailable } = useProfile();
   const { address: walletAddress } = useWallet();
-  const { balance } = useBalance(walletAddress ?? wallet?.address ?? null);
+  const { balance, refresh: refreshBalance } = useBalance(walletAddress ?? wallet?.address ?? null);
+  const { pay } = usePayment();
+  const { items: activity, refresh: refreshActivity } = useActivity();
   const router = useRouter();
+
+  // Real payment executor the agent card and send sheet drive through the engine.
+  const hooks = useMemo(
+    () => ({
+      executeSend: async (args: { recipient: string; amount: string; memo?: string }) => {
+        const res = await pay(args);
+        if (res.status === 'confirmed' || res.status === 'pending') {
+          refreshBalance();
+          refreshActivity();
+          return { ok: true as const };
+        }
+        return { ok: false as const, error: res.error ?? 'Payment failed.' };
+      },
+    }),
+    [pay, refreshBalance, refreshActivity],
+  );
 
   useEffect(() => {
     if (ready && (!configured || !authenticated)) {
@@ -63,7 +83,9 @@ export default function AppGate() {
           username: profile?.username,
           walletAddress: walletAddress ?? wallet?.address,
           balance: balance ?? undefined,
+          activity,
         }}
+        hooks={hooks}
       />
       {/* Minimal session control for Stage 3; folds into the real account menu at Stage 10. */}
       <div style={{ position: 'fixed', top: 14, right: 16, zIndex: 50 }}>
