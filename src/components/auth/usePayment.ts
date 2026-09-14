@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useWallets, toViemAccount } from '@privy-io/react-auth';
-import { createWalletClient, http } from 'viem';
+import { createWalletClient, http, custom } from 'viem';
 import { celo, celoSepolia } from 'viem/chains';
 import { useAuth } from './AuthProvider';
 
@@ -61,20 +61,36 @@ export function usePayment() {
           prepared: { to: string; data: string; value: string; feeCurrency: string; chainId: number };
         };
 
-        // Sign + broadcast with the user's Privy embedded wallet via viem, paying gas in USDC
-        // through Celo's fee-currency adapter (§14) — the user needs no CELO for gas.
+        // Sign + broadcast with the user's Privy embedded wallet.
         setStage('awaiting_signature');
         const embedded = wallets.find((w) => w.walletClientType === 'privy') ?? wallets[0];
         if (!embedded) return { status: 'failed', error: 'No wallet available to sign.' };
-        const account = await toViemAccount({ wallet: embedded });
         const chain = prepared.chainId === celo.id ? celo : celoSepolia;
-        const walletClient = createWalletClient({ account, chain, transport: http() });
-        const txHash = await walletClient.sendTransaction({
-          to: prepared.to as `0x${string}`,
-          data: prepared.data as `0x${string}`,
-          value: BigInt(prepared.value || '0'),
-          feeCurrency: prepared.feeCurrency as `0x${string}`,
-        });
+
+        let txHash: string | undefined;
+        // Preferred path: pay gas in USDC via Celo's fee-currency adapter (§14) — no CELO
+        // needed. This uses a viem client over the embedded wallet so viem can build Celo's
+        // CIP-64 transaction. If Privy can't sign that type yet, fall back to a normal send
+        // (native CELO gas), so the payment still goes through.
+        try {
+          const account = await toViemAccount({ wallet: embedded });
+          const walletClient = createWalletClient({ account, chain, transport: http() });
+          txHash = await walletClient.sendTransaction({
+            to: prepared.to as `0x${string}`,
+            data: prepared.data as `0x${string}`,
+            value: BigInt(prepared.value || '0'),
+            feeCurrency: prepared.feeCurrency as `0x${string}`,
+          });
+        } catch (feeErr) {
+          console.error('[payment] fee-abstraction (gas in USDC) failed; retrying with native gas:', feeErr);
+          const provider = await embedded.getEthereumProvider();
+          const walletClient = createWalletClient({ account: embedded.address as `0x${string}`, chain, transport: custom(provider) });
+          txHash = await walletClient.sendTransaction({
+            to: prepared.to as `0x${string}`,
+            data: prepared.data as `0x${string}`,
+            value: BigInt(prepared.value || '0'),
+          });
+        }
         if (!txHash) return { status: 'failed', error: 'No transaction hash returned.' };
 
         await authedFetch(getAccessToken, `/api/payments/${paymentId}/broadcast`, {
@@ -101,8 +117,11 @@ export function usePayment() {
         // Still pending after polling — it will settle; the activity view reflects it later.
         return { status: 'pending', txHash };
       } catch (e) {
+        console.error('[payment] failed:', e);
         setStage('failed');
-        return { status: 'failed', error: e instanceof Error ? e.message : 'Payment failed.' };
+        const msg = e instanceof Error ? e.message : 'Payment failed.';
+        // Keep the toast short and readable; the full error is in the console above.
+        return { status: 'failed', error: msg.length > 120 ? msg.slice(0, 117) + '…' : msg };
       }
     },
     [getAccessToken, wallets],
