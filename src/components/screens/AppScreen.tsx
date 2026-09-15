@@ -2,6 +2,33 @@
 // Regenerate with: npm run design:build
 import { Fragment } from 'react';
 import type { Vals } from '@/lib/viewModel';
+import {
+  OverviewIcon,
+  PaymentsIcon,
+  RequestsNavIcon,
+  ContactIcon,
+  RecurringIcon,
+  WalletIcon,
+  ReceiveNavIcon,
+  LinkIcon,
+  PrivacyIcon,
+  SettingsNavIcon,
+  type Icon,
+} from '@/components/ui/icons';
+
+/** One icon per navigation destination, keyed by the nav item's page key. */
+const NAV_ICONS: Record<string, Icon> = {
+  overview: OverviewIcon,
+  payments: PaymentsIcon,
+  requests: RequestsNavIcon,
+  contacts: ContactIcon,
+  recurring: RecurringIcon,
+  wallet: WalletIcon,
+  receive: ReceiveNavIcon,
+  connected: LinkIcon,
+  privacy: PrivacyIcon,
+  settings: SettingsNavIcon,
+};
 
 export default function AppScreen({ v }: { v: Vals }) {
   return (
@@ -30,7 +57,14 @@ export default function AppScreen({ v }: { v: Vals }) {
                       {g.items.map((n, i) => (
                         <Fragment key={i}>
                           <div className="scpf" onClick={n.onClick} tabIndex={0} onKeyDown={n.onKey} style={{ "display": "flex", "alignItems": "center", "gap": "10px", "padding": "9px 10px", "borderRadius": "9px", "cursor": "pointer", "fontSize": "14px", "background": n.bg, "outline": "none", "transition": "background .16s ease" }}>
-                            <span style={{ "width": "6px", "height": "6px", "borderRadius": "50%", "background": n.dot, "flex": "none", "transition": "background .2s ease" }}></span>
+                            {(() => {
+                              const Ico = NAV_ICONS[n.key];
+                              return Ico ? (
+                                <Ico size={18} color={n.color} weight={n.weight === '600' ? 'bold' : 'regular'} style={{ flex: 'none' }} />
+                              ) : (
+                                <span style={{ "width": "6px", "height": "6px", "borderRadius": "50%", "background": n.dot, "flex": "none" }}></span>
+                              );
+                            })()}
                             <span style={{ "color": n.color, "fontWeight": n.weight }}>
                               {n.label}
                             </span>
@@ -263,7 +297,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                                 <span style={{ "color": "#5F6878" }}>
                                   {m.label}
                                 </span>
-                                <span style={{ "fontWeight": "500", "textAlign": "right" }}>
+                                <span style={{ "fontWeight": "500", "textAlign": "right", "color": m.color ?? "#0E1420" }}>
                                   {m.value}
                                 </span>
                               </div>
@@ -395,7 +429,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                           <div style={{ "fontSize": "14.5px", "fontWeight": "600", "color": t.amountColor, "fontVariantNumeric": "tabular-nums" }}>
                             {t.amountStr}
                           </div>
-                          <div style={{ "fontSize": "12px", "color": "#5F6878", "marginTop": "2px" }}>
+                          <div style={{ "fontSize": "12px", "color": t.statusColor, "fontWeight": "500", "marginTop": "2px" }}>
                             {t.status}
                           </div>
                         </div>
@@ -437,7 +471,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                           <div style={{ "fontSize": "14.5px", "fontWeight": "600", "color": t.amountColor, "fontVariantNumeric": "tabular-nums" }}>
                             {t.amountStr}
                           </div>
-                          <div style={{ "fontSize": "12px", "color": "#5F6878", "marginTop": "2px" }}>
+                          <div style={{ "fontSize": "12px", "color": t.statusColor, "fontWeight": "500", "marginTop": "2px" }}>
                             {t.status}
                           </div>
                         </div>
@@ -982,7 +1016,14 @@ export default function AppScreen({ v }: { v: Vals }) {
               {v.mobileNav.map((m, i) => (
                 <Fragment key={i}>
                   <div onClick={m.onClick} style={{ "flex": "1", "textAlign": "center", "padding": "8px 2px", "cursor": "pointer", "minHeight": "48px", "display": "flex", "flexDirection": "column", "alignItems": "center", "justifyContent": "center", "gap": "5px" }}>
-                    <span style={{ "width": "6px", "height": "6px", "borderRadius": "50%", "background": m.dot, "transition": "background .2s ease" }}></span>
+                    {(() => {
+                      const Ico = NAV_ICONS[m.key];
+                      return Ico ? (
+                        <Ico size={20} color={m.color} weight={m.weight === '600' ? 'bold' : 'regular'} />
+                      ) : (
+                        <span style={{ "width": "6px", "height": "6px", "borderRadius": "50%", "background": m.dot }}></span>
+                      );
+                    })()}
                     <span style={{ "fontSize": "11.5px", "color": m.color, "fontWeight": m.weight }}>
                       {m.label}
                     </span>
@@ -1264,7 +1305,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                         <span style={{ "fontSize": "13.5px", "color": "#5F6878" }}>
                           {"Status"}
                         </span>
-                        <span style={{ "fontSize": "14px", "fontWeight": "500", "color": "#167A54" }}>
+                        <span style={{ "fontSize": "14px", "fontWeight": "500", "color": v.txStatusColor }}>
                           {v.txStatus}
                         </span>
                       </div>

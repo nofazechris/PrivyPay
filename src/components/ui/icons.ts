@@ -23,5 +23,13 @@ export {
   QrCode as QrIcon,
   MagnifyingGlass as SearchIcon,
   PaperPlaneTilt as AgentSendIcon,
+  // Sidebar / bottom-nav icons (§68) — one per destination.
+  SquaresFour as OverviewIcon,
+  ArrowsLeftRight as PaymentsIcon,
+  ArrowLineDown as RequestsNavIcon,
+  User as ContactIcon,
+  DownloadSimple as ReceiveNavIcon,
+  LinkSimple as LinkIcon,
+  SlidersHorizontal as SettingsNavIcon,
   type Icon,
 } from '@phosphor-icons/react';

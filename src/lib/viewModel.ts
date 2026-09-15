@@ -11,6 +11,7 @@
 
 import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ChangeEvent, KeyboardEvent, ReactElement } from 'react';
+import { statusColor } from '@/lib/format';
 
 // ---------------------------------------------------------------- static data
 
@@ -623,6 +624,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
         amountColor: t.dir === 'out' ? '#0E1420' : '#167A54',
         avatarBg: t.dir === 'out' ? '#F1F2F5' : '#E8F3ED',
         avatarColor: t.dir === 'out' ? '#5B6472' : '#167A54',
+        statusColor: statusColor(t.status),
         onClick: open,
         onKey: keyFor(open),
       };
@@ -667,7 +669,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
     const receiptStatus = s.cmdFailed ? 'Failed' : s.cmdResult?.status === 'pending' ? 'Pending' : 'Completed';
     const receiptHash = s.cmdResult?.txHash ? s.cmdResult.txHash.slice(0, 6) + '…' + s.cmdResult.txHash.slice(-4) : '';
 
-    type Row = { label: string; value: string };
+    type Row = { label: string; value: string; color?: string };
     const cmdMeta: Row[] =
       cmdKindLabel === 'send'
         ? [
@@ -695,7 +697,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
         ? [
             { label: 'To', value: it?.handle ?? '' },
             { label: 'Network', value: 'Celo' },
-            { label: 'Status', value: receiptStatus },
+            { label: 'Status', value: receiptStatus, color: statusColor(receiptStatus) },
             ...(receiptHash ? [{ label: 'Transaction', value: receiptHash }] : []),
             ...(s.cmdFailed && s.cmdError ? [{ label: 'Reason', value: s.cmdError }] : []),
           ]
@@ -929,7 +931,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       navGroups,
       mobileNav: ([['overview', 'Home'], ['payments', 'Payments'], ['requests', 'Requests'], ['contacts', 'Contacts'], ['settings', 'Settings']] as Array<[Page, string]>).map(([k, label]) => {
         const active = s.page === k;
-        return { label, onClick: nav(k), dot: active ? '#1B45D7' : 'transparent', color: active ? '#153AB4' : '#5F6878', weight: active ? '600' : '450' };
+        return { key: k, label, onClick: nav(k), dot: active ? '#1B45D7' : 'transparent', color: active ? '#153AB4' : '#5F6878', weight: active ? '600' : '450' };
       }),
 
       pageHeading: (headings[s.page] || ['PrivyPay', ''])[0],
@@ -1162,6 +1164,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       txDirLabel: tx && tx.dir === 'out' ? 'To' : 'From',
       txHandle: tx ? tx.handle : '',
       txStatus: tx ? tx.status : '',
+      txStatusColor: tx ? statusColor(tx.status) : '#5F6878',
       txDate: tx ? tx.date : '',
       txHash: tx ? tx.hash : '',
 

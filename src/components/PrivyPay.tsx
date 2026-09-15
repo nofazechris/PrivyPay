@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useViewModel, type ViewModelHooks, type Contact } from '@/lib/viewModel';
 import { useHeroBackground } from '@/lib/heroBackground';
-import { shortAddress } from '@/lib/format';
+import { shortAddress, statusColor } from '@/lib/format';
 import { addressQr } from '@/lib/qr';
 import type { ActivityItem } from '@/components/auth/useActivity';
 import LandingScreen from './screens/LandingScreen';
@@ -79,6 +79,7 @@ function activityToRow(item: ActivityItem) {
     group,
     kind: 'Payment',
     status: STATUS_LABEL[item.status] ?? item.status,
+    statusColor: statusColor(STATUS_LABEL[item.status] ?? item.status),
     date: new Date(item.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
     hash: item.txHash ? shortAddress(item.txHash) : '',
     sub: when,
