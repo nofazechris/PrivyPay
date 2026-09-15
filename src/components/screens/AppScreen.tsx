@@ -842,7 +842,15 @@ export default function AppScreen({ v }: { v: Vals }) {
                         <p style={{ "fontSize": "13.5px", "color": "#5B6472", "lineHeight": "1.6", "margin": "14px 0 18px" }}>
                           {sv.desc}
                         </p>
-                        <button className="scp5" onClick={sv.onToggle} style={{ "marginTop": "auto", "width": "100%", "border": `1px solid ${sv.ctaBorder}`, "background": sv.ctaBg, "color": sv.ctaColor, "fontSize": "14px", "fontWeight": "500", "padding": "11px", "borderRadius": "10px", "cursor": "pointer", "transition": "background .16s ease,border-color .16s ease" }}>
+                        <button
+                          className="scp5"
+                          onClick={() => {
+                            if (!sv.connectable) return;
+                            document.getElementById('pp-connect-agent')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }}
+                          disabled={!sv.connectable}
+                          style={{ "marginTop": "auto", "width": "100%", "border": `1px solid ${sv.ctaBorder}`, "background": sv.ctaBg, "color": sv.ctaColor, "fontSize": "14px", "fontWeight": "500", "padding": "11px", "borderRadius": "10px", "cursor": sv.connectable ? "pointer" : "default", "transition": "background .16s ease,border-color .16s ease" }}
+                        >
                           {sv.ctaLabel}
                         </button>
                       </div>
@@ -876,7 +884,9 @@ export default function AppScreen({ v }: { v: Vals }) {
                     ))}
                   </div>
                 </div>
-                <McpTokens />
+                <div id="pp-connect-agent" style={{ "scrollMarginTop": "16px" }}>
+                  <McpTokens />
+                </div>
                 <AgentPayments />
                 <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "22px", "marginTop": "16px" }}>
                   <div style={{ "fontSize": "15px", "fontWeight": "600" }}>

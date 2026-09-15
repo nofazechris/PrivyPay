@@ -1194,8 +1194,10 @@ export function useViewModel(
       nextRecurringHandle: nextRecurring ? nextRecurring.handle : '',
       nextRecurringWhen: nextRecurring ? nextRecurring.next + ' · ' + nextRecurring.cadence : '',
 
+      // Real connect: ChatGPT/Claude connect over MCP (the button jumps to "Connect an agent",
+      // where you generate a token + copy the endpoint). WhatsApp isn't built yet — coming soon.
       serviceRows: SERVICES.map(([k, name, desc, markBg, markBorder]) => {
-        const on = !!s.connections[k];
+        const comingSoon = k === 'whatsapp';
         return {
           name,
           desc,
@@ -1204,17 +1206,14 @@ export function useViewModel(
           isChatgpt: k === 'chatgpt',
           isClaude: k === 'claude',
           isWhatsapp: k === 'whatsapp',
-          stateLabel: on ? 'Connected' : 'Not connected',
-          stateColor: on ? '#167A54' : '#8A6A1E',
-          dot: on ? '#167A54' : '#D8A93A',
-          ctaLabel: on ? 'Manage' : 'Connect',
-          ctaBg: on ? '#fff' : '#1B45D7',
-          ctaColor: on ? '#0E1420' : '#fff',
-          ctaBorder: on ? '#DCE0E7' : '#1B45D7',
-          onToggle: () => {
-            setState((st) => ({ connections: { ...st.connections, [k]: !st.connections[k] } }));
-            flash(on ? name + ' disconnected' : name + ' connected');
-          },
+          connectable: !comingSoon,
+          stateLabel: comingSoon ? 'Coming soon' : 'Available via MCP',
+          stateColor: comingSoon ? '#8A6A1E' : '#5F6878',
+          dot: comingSoon ? '#D8A93A' : '#D2D7DF',
+          ctaLabel: comingSoon ? 'Coming soon' : 'Connect',
+          ctaBg: comingSoon ? '#F2F3F6' : '#1B45D7',
+          ctaColor: comingSoon ? '#8A93A6' : '#fff',
+          ctaBorder: comingSoon ? '#E4E7EC' : '#1B45D7',
         };
       }),
       mcpTools: MCP_TOOLS.map(([name, mode]) => ({ name, mode, color: mode === 'Read' ? '#5F6878' : '#153AB4' })),
