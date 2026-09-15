@@ -29,6 +29,13 @@
       "when": 1789433615858,
       "tag": "0003_hard_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789452637207,
+      "tag": "0004_silky_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

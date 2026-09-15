@@ -618,6 +618,16 @@ export default function AppScreen({ v }: { v: Vals }) {
                       </div>
                     </Fragment>
                   ))}
+                  {v.noRequests ? (
+                    <div style={{ "padding": "34px 20px", "textAlign": "center" }}>
+                      <div style={{ "fontSize": "14px", "fontWeight": "600" }}>
+                        {"No requests yet"}
+                      </div>
+                      <div style={{ "fontSize": "13px", "color": "#5F6878", "marginTop": "5px" }}>
+                        {"Ask someone to pay you with the form above."}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </>

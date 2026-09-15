@@ -19,6 +19,8 @@ export type PayStage = 'idle' | 'preparing' | 'awaiting_signature' | 'pending' |
 
 export interface PayResult {
   status: 'confirmed' | 'failed' | 'pending';
+  /** The engine payment id, so callers (e.g. paying a request) can link the fulfilling payment. */
+  paymentId?: string;
   txHash?: string | null;
   explorerUrl?: string | null;
   error?: string;
@@ -119,16 +121,16 @@ export function usePayment() {
           const status: string = data.payment?.status;
           if (status === 'CONFIRMED') {
             setStage('confirmed');
-            return { status: 'confirmed', txHash, explorerUrl: data.payment.explorerUrl };
+            return { status: 'confirmed', paymentId, txHash, explorerUrl: data.payment.explorerUrl };
           }
           if (status === 'FAILED') {
             setStage('failed');
-            return { status: 'failed', txHash, explorerUrl: data.payment.explorerUrl, error: 'Transaction failed on-chain.' };
+            return { status: 'failed', paymentId, txHash, explorerUrl: data.payment.explorerUrl, error: 'Transaction failed on-chain.' };
           }
           await new Promise((r) => setTimeout(r, 2500));
         }
         // Still pending after polling — it will settle; the activity view reflects it later.
-        return { status: 'pending', txHash };
+        return { status: 'pending', paymentId, txHash };
       } catch (e) {
         console.error('[payment] failed:', e);
         setStage('failed');

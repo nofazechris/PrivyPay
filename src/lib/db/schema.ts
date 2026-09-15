@@ -110,6 +110,30 @@ export const contacts = pgTable(
   (t) => [uniqueIndex('contacts_owner_username_uq').on(t.ownerUserId, t.username)],
 );
 
+export const requests = pgTable('requests', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** Who asked for the money (and receives it when paid). */
+  requesterUserId: uuid('requester_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** Who is asked to pay. Must be a real PrivyPay user, resolved at create time. */
+  payerUserId: uuid('payer_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** Amount in the token's smallest unit, as a decimal string — never a float (§18). */
+  amount: text('amount').notNull(),
+  token: text('token').notNull(),
+  chainId: integer('chain_id').notNull(),
+  memo: text('memo'),
+  /** PENDING | PAID | CANCELLED. */
+  status: text('status').notNull().default('PENDING'),
+  /** The payment that fulfilled this request, once paid. */
+  paymentId: uuid('payment_id').references(() => payments.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+});
+
 export const authorizations = pgTable('authorizations', {
   id: uuid('id').defaultRandom().primaryKey(),
   paymentId: uuid('payment_id')
@@ -135,3 +159,4 @@ export type WalletRow = typeof wallets.$inferSelect;
 export type PaymentRow = typeof payments.$inferSelect;
 export type AuthorizationRow = typeof authorizations.$inferSelect;
 export type ContactRow = typeof contacts.$inferSelect;
+export type RequestRecord = typeof requests.$inferSelect;

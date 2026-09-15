@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useViewModel, type ViewModelHooks, type Contact } from '@/lib/viewModel';
+import { useViewModel, type ViewModelHooks, type Contact, type AppRequest } from '@/lib/viewModel';
 import { useHeroBackground } from '@/lib/heroBackground';
 import { shortAddress, statusColor } from '@/lib/format';
 import { addressQr } from '@/lib/qr';
@@ -31,6 +31,8 @@ export interface AppIdentity {
   activity?: ActivityItem[];
   /** The user's saved contacts; replaces the demo contact fixtures. */
   contacts?: { username: string; displayName: string | null }[];
+  /** The user's real payment requests (both directions); replaces the demo request fixtures. */
+  requests?: AppRequest[];
 }
 
 /** Format a decimal balance string to 2 places for display, e.g. "0" → "0.00". */
@@ -126,7 +128,8 @@ export default function PrivyPay({
     () => (appIdentity ? toContactTuples(appIdentity.contacts) : undefined),
     [appIdentity],
   );
-  const v = useViewModel(startView, hooks, appContacts);
+  const appRequests = useMemo(() => (appIdentity ? appIdentity.requests ?? [] : undefined), [appIdentity]);
+  const v = useViewModel(startView, hooks, appContacts, appRequests);
   // The animated backdrop lives here rather than in the view model: it hands out DOM refs,
   // which are not view data.
   const heroRefs = useHeroBackground(v.isLanding, v.heroStage);
@@ -193,11 +196,27 @@ export default function PrivyPay({
         .filter((g) => g.rows.length);
 
       const sent = rows.filter((r) => r.dir === 'out').reduce((sum, r) => sum + r.amount, 0);
+      const received = rows.filter((r) => r.dir === 'in').reduce((sum, r) => sum + r.amount, 0);
       merged.sentMonth = formatBalance(String(sent));
-      merged.receivedMonth = '0.00';
+      merged.receivedMonth = formatBalance(String(received));
 
-      // contactRows / sendSuggestions come from the view model's real-contact list; keep them.
-      merged.requestRows = [];
+      // Agent "what's my balance?" answer: use the real balance + real sent/received, not the
+      // demo figures. Only the balance answer is overridden (detected by its label), so the
+      // activity/help answers are untouched.
+      if (merged.cmdAnswerLabel === 'Total balance') {
+        merged.cmdAnswerValue = '$' + formatBalance(appIdentity.balance ?? '0') + ' USDC';
+        merged.cmdAnswerRows = [
+          { handle: 'Celo', sub: 'Settlement network', amount: 'Wallet ready', color: '#167A54' },
+          { handle: 'This month', sub: 'Sent · received', amount: `-$${merged.sentMonth} · +$${merged.receivedMonth}`, color: '#5B6472' },
+        ];
+      }
+      // Agent "show recent payments" answer: use real history, not demo transactions.
+      if (merged.cmdAnswerLabel === 'Recent payments') {
+        merged.cmdAnswerValue = rows.length ? `Last ${Math.min(3, rows.length)} payment${Math.min(3, rows.length) === 1 ? '' : 's'}` : 'No payments yet';
+        merged.cmdAnswerRows = rows.slice(0, 3).map((r) => ({ handle: r.handle, sub: r.sub, amount: r.amountStr, color: r.amountColor }));
+      }
+
+      // contactRows / sendSuggestions / requestRows come from the view model's real lists; keep them.
       merged.recurringRows = [];
     }
     return merged;

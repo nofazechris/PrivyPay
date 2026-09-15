@@ -10,6 +10,7 @@ import { useBalance } from '@/components/auth/useBalance';
 import { usePayment } from '@/components/auth/usePayment';
 import { useActivity } from '@/components/auth/useActivity';
 import { useContacts } from '@/components/auth/useContacts';
+import { useRequests } from '@/components/auth/useRequests';
 import { AccountMenu } from '@/components/app/AccountMenu';
 import { Spinner, Text } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
@@ -32,9 +33,10 @@ export default function AppGate() {
   const { pay } = usePayment();
   const { items: activity, refresh: refreshActivity } = useActivity();
   const { items: contacts, add: addContact } = useContacts();
+  const { items: requests, create: createRequest, markPaid: markRequestPaid } = useRequests();
   const router = useRouter();
 
-  // Real payment executor + contact management the agent card and send sheet drive.
+  // Real payment executor + contact/request management the agent card and screens drive.
   const hooks = useMemo(
     () => ({
       executeSend: async (args: { recipient: string; amount: string; memo?: string }) => {
@@ -48,8 +50,20 @@ export default function AppGate() {
         return { ok: false as const, error: res.error ?? 'Payment failed.' };
       },
       addContact: (username: string) => addContact(username),
+      createRequest: (args: { payer: string; amount: string; memo?: string }) => createRequest(args),
+      // Pay a received request: a real payment to the requester, then mark the request settled.
+      payRequest: async (args: { requestId: string; recipient: string; amount: string }) => {
+        const res = await pay({ recipient: args.recipient, amount: args.amount });
+        if (res.status === 'confirmed' || res.status === 'pending') {
+          await markRequestPaid(args.requestId, res.paymentId ?? null);
+          refreshBalance();
+          refreshActivity();
+          return { ok: true as const };
+        }
+        return { ok: false as const, error: res.error ?? 'Payment failed.' };
+      },
     }),
-    [pay, refreshBalance, refreshActivity, addContact],
+    [pay, refreshBalance, refreshActivity, addContact, createRequest, markRequestPaid],
   );
 
   useEffect(() => {
@@ -90,6 +104,7 @@ export default function AppGate() {
           balance: balance ?? undefined,
           activity,
           contacts,
+          requests,
         }}
         hooks={hooks}
       />

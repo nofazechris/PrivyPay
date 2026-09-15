@@ -328,9 +328,29 @@ export interface ViewModelHooks {
   }>;
   /** Add a person to the user's contacts by @username; resolves ok/false with a message. */
   addContact?: (username: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Create a payment request asking a @username to pay the user. */
+  createRequest?: (args: { payer: string; amount: string; memo?: string }) => Promise<{ ok: boolean; error?: string }>;
+  /** Pay a received request: real payment to the requester, then mark it settled. */
+  payRequest?: (args: { requestId: string; recipient: string; amount: string }) => Promise<{ ok: boolean; error?: string }>;
 }
 
-export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: ViewModelHooks = {}, contacts?: Contact[]) {
+/** A real payment request injected into the app view, replacing the demo request fixtures. */
+export interface AppRequest {
+  id: string;
+  direction: 'incoming' | 'outgoing';
+  counterparty: string;
+  amount: string;
+  memo: string | null;
+  status: string;
+  payable: boolean;
+}
+
+export function useViewModel(
+  startView: 'landing' | 'app' = 'landing',
+  hooks: ViewModelHooks = {},
+  contacts?: Contact[],
+  appRequests?: AppRequest[],
+) {
   const [s, setS] = useState<State>(() => initialState(startView));
 
   // Real contacts (derived from the signed-in user's activity) replace the demo fixtures in the
@@ -515,6 +535,56 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
           flash(r.error ?? 'Could not add contact.');
         }
       });
+    },
+    [setState, flash],
+  );
+
+  const createRequestWith = useCallback(
+    (st: State) => {
+      if (!st.reqTo || !(parseFloat(st.reqAmount) > 0)) return;
+      const to = st.reqTo.startsWith('@') ? st.reqTo : '@' + st.reqTo;
+      const receipt: RequestRow = {
+        id: Date.now(),
+        handle: to,
+        initial: (to[1] ?? '?').toUpperCase(),
+        amount: money(parseFloat(st.reqAmount)),
+        note: st.reqNote || 'Payment request',
+        status: 'Pending',
+        payable: false,
+      };
+      // Real path: create server-side; the list refreshes from the server (appRequests).
+      if (hooksRef.current.createRequest) {
+        hooksRef.current
+          .createRequest({ payer: to.replace(/^@+/, ''), amount: st.reqAmount, memo: st.reqNote || undefined })
+          .then((r) => {
+            if (r.ok) setState({ reqSent: receipt, reqTo: '', reqAmount: '', reqNote: '' });
+            else flash(r.error ?? 'Could not create request.');
+          });
+        return;
+      }
+      // Demo path: keep it local.
+      setState((prev) => ({ reqSent: receipt, requests: [receipt].concat(prev.requests), reqTo: '', reqAmount: '', reqNote: '' }));
+    },
+    [setState, flash],
+  );
+
+  const payRequestWith = useCallback(
+    (row: { id: string | number; handle: string; payAmount: string; payable: boolean }) => {
+      if (!row.payable) return;
+      // Real path: pay the requester through the engine, then mark the request settled.
+      if (hooksRef.current.payRequest) {
+        flash('Sending payment to ' + row.handle + '…');
+        hooksRef.current
+          .payRequest({ requestId: String(row.id), recipient: row.handle, amount: row.payAmount })
+          .then((r) => flash(r.ok ? 'Payment sent to ' + row.handle : r.error ?? 'Payment failed.'));
+        return;
+      }
+      // Demo path: local mark-paid + balance deduction.
+      setState((st) => ({
+        requests: st.requests.map((x) => (x.id === row.id ? { ...x, status: 'Paid', payable: false } : x)),
+        balance: Math.max(0, st.balance - (parseFloat(row.payAmount) || 0)),
+      }));
+      flash('Payment sent to ' + row.handle);
     },
     [setState, flash],
   );
@@ -743,6 +813,25 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       "What's my balance?",
       'Show recent payments',
     ];
+
+    // Request list: real requests (both directions) when signed in, else the demo fixtures. Each
+    // row carries a decimal `payAmount` for the pay-through-engine action and a display `amount`.
+    const statusLabelFor = (r: AppRequest) =>
+      r.status === 'PAID' ? 'Paid' : r.status === 'CANCELLED' ? 'Cancelled' : r.payable ? 'Awaiting you' : 'Pending';
+    const requestSource: Array<RequestRow & { payAmount: string }> = appRequests
+      ? appRequests.map((r) => ({
+          id: r.id as unknown as number,
+          handle: r.counterparty,
+          initial: (r.counterparty.replace(/^@/, '')[0] ?? '?').toUpperCase(),
+          amount: money(parseFloat(r.amount)),
+          note: r.memo ?? (r.direction === 'incoming' ? 'Requested from you' : 'You requested'),
+          status: statusLabelFor(r),
+          payable: r.payable,
+          payAmount: r.amount,
+        }))
+      : s.requests.map((r) => ({ ...r, payAmount: r.amount.replace(/,/g, '') }));
+    const requestStatusColor = (label: string) =>
+      label === 'Paid' ? '#167A54' : label === 'Cancelled' ? '#B42318' : '#B7791F';
 
     return {
       isLanding: s.view === 'landing',
@@ -1008,27 +1097,17 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       reqFormOpen: !s.reqSent,
       reqDone: !!s.reqSent,
       reqOpacity: s.reqTo && parseFloat(s.reqAmount) > 0 ? '1' : '.45',
-      createRequest: () => {
-        if (!s.reqTo || !(parseFloat(s.reqAmount) > 0)) return;
-        const to = s.reqTo.startsWith('@') ? s.reqTo : '@' + s.reqTo;
-        const row: RequestRow = { id: Date.now(), handle: to, initial: to[1].toUpperCase(), amount: money(parseFloat(s.reqAmount)), note: s.reqNote || 'Payment request', status: 'Pending', payable: false };
-        setState((st) => ({ reqSent: row, requests: [row].concat(st.requests), reqTo: '', reqAmount: '', reqNote: '' }));
-      },
+      createRequest: () => createRequestWith(s),
       newRequest: () => setState({ reqSent: null }),
       sentReqTo: s.reqSent ? s.reqSent.handle : '',
       sentReqAmount: s.reqSent ? s.reqSent.amount : '',
       sentReqNote: s.reqSent ? s.reqSent.note : '',
-      requestRows: s.requests.map((r) => ({
+      requestRows: requestSource.map((r) => ({
         ...r,
-        statusColor: r.status === 'Pending' ? '#8A6A1E' : '#153AB4',
-        onPay: () => {
-          setState((st) => ({
-            requests: st.requests.map((x) => (x.id === r.id ? { ...x, status: 'Paid', payable: false } : x)),
-            balance: Math.max(0, st.balance - parseFloat(r.amount.replace(/,/g, ''))),
-          }));
-          flash('Payment sent to ' + r.handle);
-        },
+        statusColor: requestStatusColor(r.status),
+        onPay: () => payRequestWith(r),
       })),
+      noRequests: requestSource.length === 0,
 
       recurringRows: s.recurring.map((r) => ({
         ...r,
@@ -1171,7 +1250,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       toastShown: !!s.toast,
       toastText: s.toast || '',
     };
-  }, [s, contactsList, canAddContact, setState, later, flash, nav, runCmdWith, cmdReset, cmdConfirmWith, addContactWith, startSetupWith, sendNextWith, startHero, heroConfirm]);
+  }, [s, contactsList, canAddContact, appRequests, setState, later, flash, nav, runCmdWith, cmdReset, cmdConfirmWith, addContactWith, createRequestWith, payRequestWith, startSetupWith, sendNextWith, startHero, heroConfirm]);
 }
 
 export type Vals = ReturnType<typeof useViewModel>;
