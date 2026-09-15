@@ -90,6 +90,26 @@ export const payments = pgTable(
   (t) => [uniqueIndex('payments_sender_idem_uq').on(t.senderUserId, t.idempotencyKey)],
 );
 
+export const contacts = pgTable(
+  'contacts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    /** The user who owns this contact list entry. */
+    ownerUserId: uuid('owner_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** The saved person's PrivyPay user id (set when they are a PrivyPay user). */
+    contactUserId: uuid('contact_user_id').references(() => users.id, { onDelete: 'set null' }),
+    /** Saved username, normalized (lowercase, no leading '@'). */
+    username: text('username').notNull(),
+    /** Optional display name shown in the UI; falls back to the username. */
+    displayName: text('display_name'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  // One entry per person in a user's contact list; re-adding is idempotent on this key.
+  (t) => [uniqueIndex('contacts_owner_username_uq').on(t.ownerUserId, t.username)],
+);
+
 export const authorizations = pgTable('authorizations', {
   id: uuid('id').defaultRandom().primaryKey(),
   paymentId: uuid('payment_id')
@@ -114,3 +134,4 @@ export type ProfileRow = typeof profiles.$inferSelect;
 export type WalletRow = typeof wallets.$inferSelect;
 export type PaymentRow = typeof payments.$inferSelect;
 export type AuthorizationRow = typeof authorizations.$inferSelect;
+export type ContactRow = typeof contacts.$inferSelect;

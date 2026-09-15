@@ -99,7 +99,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                     {"What would you like to do?"}
                   </div>
                   <div style={{ "display": "flex", "gap": "9px", "marginTop": "12px", "flexWrap": "wrap" }}>
-                    <input className="scp6" value={v.cmdInput} onChange={v.onCmdInput} onKeyDown={v.onCmdKey} placeholder="Send $20 to @sarah" style={{ "flex": "1", "minWidth": "190px", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "11px", "padding": "13px 15px", "fontSize": "15px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
+                    <input className="scp6" value={v.cmdInput} onChange={v.onCmdInput} onKeyDown={v.onCmdKey} placeholder="Send $10 to @username" style={{ "flex": "1", "minWidth": "190px", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "11px", "padding": "13px 15px", "fontSize": "15px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
                     <button className="scp0 scp3" onClick={v.runCmd} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "15px", "fontWeight": "500", "borderRadius": "11px", "cursor": "pointer", "transition": "background .16s ease,transform .16s ease", "padding": "13px 20px" }}>
                       {"Run"}
                     </button>
@@ -243,8 +243,8 @@ export default function AppScreen({ v }: { v: Vals }) {
                     <>
                       <div style={{ "marginTop": "16px", "border": "1px solid #EDEFF3", "borderRadius": "14px", "padding": "18px", "animation": "pp-step .32s cubic-bezier(.2,.8,.3,1) both" }}>
                         <div style={{ "display": "flex", "alignItems": "center", "gap": "11px" }}>
-                          <span style={{ "width": "30px", "height": "30px", "borderRadius": "50%", "background": "#1B45D7", "color": "#fff", "fontSize": "14px", "display": "flex", "alignItems": "center", "justifyContent": "center", "flex": "none", "animation": "pp-pop .34s cubic-bezier(.2,.8,.3,1) both" }}>
-                            {"✓"}
+                          <span style={{ "width": "30px", "height": "30px", "borderRadius": "50%", "background": v.cmdDoneMarkBg, "color": "#fff", "fontSize": "14px", "display": "flex", "alignItems": "center", "justifyContent": "center", "flex": "none", "animation": "pp-pop .34s cubic-bezier(.2,.8,.3,1) both" }}>
+                            {v.cmdDoneMark}
                           </span>
                           <div style={{ "fontSize": "15.5px", "fontWeight": "600", "letterSpacing": "-.015em" }}>
                             {v.cmdDoneTitle}
@@ -591,6 +591,14 @@ export default function AppScreen({ v }: { v: Vals }) {
           {v.isContacts ? (
             <>
               <div data-screen-label="Contacts" style={{ "maxWidth": "1020px", "margin": "0 auto", "padding": "22px 24px 40px", "animation": "pp-fade .22s ease both" }}>
+                {v.canAddContact ? (
+                  <div style={{ "display": "flex", "gap": "9px", "marginBottom": "14px", "flexWrap": "wrap" }}>
+                    <input className="scp6" value={v.contactAdd} onChange={v.onContactAdd} onKeyDown={v.onContactAddKey} placeholder="Add a contact by @username" style={{ "flex": "1", "minWidth": "220px", "maxWidth": "340px", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 14px", "fontSize": "14.5px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
+                    <button className="scp0 scp3" onClick={v.addContact} disabled={v.contactAddDisabled} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14.5px", "fontWeight": "500", "borderRadius": "10px", "cursor": "pointer", "opacity": v.contactAddOpacity, "transition": "background .16s ease,transform .16s ease,opacity .16s ease", "padding": "11px 18px" }}>
+                      {v.contactAddLabel}
+                    </button>
+                  </div>
+                ) : null}
                 <input className="scp6" value={v.contactQuery} onChange={v.onContactQuery} placeholder="Search by username or name" style={{ "width": "100%", "maxWidth": "340px", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 14px", "fontSize": "14.5px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
                 <div style={{ "display": "grid", "gridTemplateColumns": "repeat(auto-fit,minmax(256px,1fr))", "gap": "12px", "marginTop": "16px" }}>
                   {v.contactRows.map((c, i) => (
@@ -628,10 +636,10 @@ export default function AppScreen({ v }: { v: Vals }) {
                   <>
                     <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "14px", "padding": "38px", "textAlign": "center", "marginTop": "16px" }}>
                       <div style={{ "fontSize": "14.5px", "fontWeight": "600" }}>
-                        {"No matches"}
+                        {v.contactsEmptyTitle}
                       </div>
                       <div style={{ "fontSize": "13.5px", "color": "#5F6878", "marginTop": "6px" }}>
-                        {"Try another username."}
+                        {v.contactsEmptySub}
                       </div>
                     </div>
                   </>

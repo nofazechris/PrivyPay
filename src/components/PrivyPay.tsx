@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useViewModel, type ViewModelHooks } from '@/lib/viewModel';
+import { useViewModel, type ViewModelHooks, type Contact } from '@/lib/viewModel';
 import { useHeroBackground } from '@/lib/heroBackground';
 import { shortAddress } from '@/lib/format';
 import { addressQr } from '@/lib/qr';
@@ -29,6 +29,8 @@ export interface AppIdentity {
   balance?: string;
   /** The user's real payment history; replaces the demo transactions. */
   activity?: ActivityItem[];
+  /** The user's saved contacts; replaces the demo contact fixtures. */
+  contacts?: { username: string; displayName: string | null }[];
 }
 
 /** Format a decimal balance string to 2 places for display, e.g. "0" → "0.00". */
@@ -94,6 +96,19 @@ function activityToRow(item: ActivityItem) {
   };
 }
 
+/**
+ * Real contacts = the people the user has explicitly saved. Replaces the demo contact fixtures
+ * so suggestions and the contacts list reflect real, added people — never invented names.
+ * Returns an empty list (not the demo list) when the user hasn't added anyone yet.
+ */
+function toContactTuples(contacts?: { username: string; displayName: string | null }[]): Contact[] {
+  return (contacts ?? []).map((c) => {
+    const handle = '@' + c.username;
+    const name = c.displayName ?? handle;
+    return [handle, name, (c.username[0] ?? '?').toUpperCase(), ''] as Contact;
+  });
+}
+
 export default function PrivyPay({
   startView = 'landing',
   onGetStarted,
@@ -105,7 +120,12 @@ export default function PrivyPay({
   appIdentity?: AppIdentity;
   hooks?: ViewModelHooks;
 }) {
-  const v = useViewModel(startView, hooks);
+  // Real contacts in the app; `undefined` on the marketing landing keeps the demo reel intact.
+  const appContacts = useMemo(
+    () => (appIdentity ? toContactTuples(appIdentity.contacts) : undefined),
+    [appIdentity],
+  );
+  const v = useViewModel(startView, hooks, appContacts);
   // The animated backdrop lives here rather than in the view model: it hands out DOM refs,
   // which are not view data.
   const heroRefs = useHeroBackground(v.isLanding, v.heroStage);
@@ -157,8 +177,9 @@ export default function PrivyPay({
     }
 
     // Real app: strip every demo fixture. Real payment history replaces the demo transactions;
-    // contacts/requests/recurring have no real data yet (Stages 11–12), so they show as empty
-    // rather than fake. No fake numbers are shown anywhere in the signed-in app.
+    // contacts + send/agent suggestions are derived from that history in the view model (via
+    // `appContacts`); requests/recurring have no real data yet (Stages 11–12), so they show as
+    // empty rather than fake. No fake numbers are shown anywhere in the signed-in app.
     if (appIdentity) {
       // Real rows carry string ids and a plain-object key event; the view model's row type is
       // inferred from the demo fixtures, so cast at this merge boundary.
@@ -174,9 +195,7 @@ export default function PrivyPay({
       merged.sentMonth = formatBalance(String(sent));
       merged.receivedMonth = '0.00';
 
-      merged.contactRows = [];
-      merged.noContacts = true;
-      merged.sendSuggestions = [];
+      // contactRows / sendSuggestions come from the view model's real-contact list; keep them.
       merged.requestRows = [];
       merged.recurringRows = [];
     }

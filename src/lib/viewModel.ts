@@ -15,7 +15,7 @@ import type { CSSProperties, ChangeEvent, KeyboardEvent, ReactElement } from 're
 // ---------------------------------------------------------------- static data
 
 /** [handle, name, initial, address] */
-type Contact = [string, string, string, string];
+export type Contact = [string, string, string, string];
 
 const CONTACTS: Contact[] = [
   ['@sarah', 'Sarah Okafor', 'S', '0x8F…21A'],
@@ -115,6 +115,13 @@ interface State {
   cmdInput: string;
   cmdStage: CmdStage;
   cmdIntent: Intent | null;
+  /** When an answer is really a prompt back to the user (e.g. no recipient given). */
+  cmdPrompt: 'recipient' | null;
+  /** The real result of a confirmed send, used to render a truthful receipt. */
+  cmdResult: { status: string; txHash?: string | null; explorerUrl?: string | null } | null;
+  /** True when the last confirmed action failed — the receipt renders as a failure. */
+  cmdFailed: boolean;
+  cmdError: string | null;
   authStep: AuthStep;
   authBusy: boolean;
   email: string;
@@ -134,6 +141,8 @@ interface State {
   reqNote: string;
   reqSent: RequestRow | null;
   contactQuery: string;
+  contactAdd: string;
+  contactAdding: boolean;
   privacyOn: boolean;
   connections: Record<ServiceKey, boolean>;
   requests: RequestRow[];
@@ -155,6 +164,10 @@ function initialState(startView: 'landing' | 'app'): State {
     cmdInput: '',
     cmdStage: 'idle',
     cmdIntent: null,
+    cmdPrompt: null,
+    cmdResult: null,
+    cmdFailed: false,
+    cmdError: null,
     authStep: 'welcome',
     authBusy: false,
     email: '',
@@ -174,6 +187,8 @@ function initialState(startView: 'landing' | 'app'): State {
     reqNote: '',
     reqSent: null,
     contactQuery: '',
+    contactAdd: '',
+    contactAdding: false,
     privacyOn: true,
     connections: { chatgpt: true, claude: false, whatsapp: true },
     requests: [
@@ -285,11 +300,13 @@ function parseCmd(raw: string): Intent | null {
   const every = low.match(/every\s+([a-z]+)/);
   if (/balance|how much/.test(low)) return { kind: 'balance' };
   if (/recent|activity|history|transactions/.test(low)) return { kind: 'activity' };
-  if (every && amount) return { kind: 'recurring', amount, handle: handle || '@designer', cadence: 'Every ' + every[1].charAt(0).toUpperCase() + every[1].slice(1) };
+  // Never invent a recipient. When the message has no @username, the handle stays undefined and
+  // the agent asks who to pay rather than silently defaulting to a demo contact.
+  if (every && amount) return { kind: 'recurring', amount, handle: handle ?? undefined, cadence: 'Every ' + every[1].charAt(0).toUpperCase() + every[1].slice(1) };
   if (/request|invoice|ask/.test(low) && amount) {
-    return { kind: 'request', amount, handle: handle || '@mike', note: ((low.match(/for\s+(.+)$/) || [])[1] || 'Payment request').replace(/[.]$/, '') };
+    return { kind: 'request', amount, handle: handle ?? undefined, note: ((low.match(/for\s+(.+)$/) || [])[1] || 'Payment request').replace(/[.]$/, '') };
   }
-  if (amount) return { kind: 'send', amount, handle: handle || '@sarah' };
+  if (amount) return { kind: 'send', amount, handle: handle ?? undefined };
   return { kind: 'unknown' };
 }
 
@@ -297,12 +314,34 @@ function parseCmd(raw: string): Intent | null {
 
 /** Real-execution hooks injected by the app; absent on the landing demo (§25, §31). */
 export interface ViewModelHooks {
-  /** Execute a real USDC payment; resolves ok/false with an error message. */
-  executeSend?: (args: { recipient: string; amount: string; memo?: string }) => Promise<{ ok: boolean; error?: string }>;
+  /**
+   * Execute a real USDC payment. Resolves `ok` with the on-chain outcome (status + tx hash) so
+   * the agent card can render a truthful receipt, or `ok:false` with a readable error.
+   */
+  executeSend?: (args: { recipient: string; amount: string; memo?: string }) => Promise<{
+    ok: boolean;
+    error?: string;
+    status?: 'confirmed' | 'pending' | 'failed';
+    txHash?: string | null;
+    explorerUrl?: string | null;
+  }>;
+  /** Add a person to the user's contacts by @username; resolves ok/false with a message. */
+  addContact?: (username: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
-export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: ViewModelHooks = {}) {
+export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: ViewModelHooks = {}, contacts?: Contact[]) {
   const [s, setS] = useState<State>(() => initialState(startView));
+
+  // Real contacts (derived from the signed-in user's activity) replace the demo fixtures in the
+  // app; the marketing landing passes none and keeps the demo reel. `null` contacts means "no
+  // real data yet" (empty), which is different from `undefined` ("use the demo list").
+  const contactsList = contacts ?? CONTACTS;
+  // Adding contacts is a real-app capability; the marketing demo has no such hook.
+  const canAddContact = !!hooks.addContact;
+  const contactsRef = useRef<Contact[]>(contactsList);
+  useEffect(() => {
+    contactsRef.current = contacts ?? CONTACTS;
+  }, [contacts]);
 
   // Hooks read through a ref so the action callbacks stay referentially stable.
   const hooksRef = useRef(hooks);
@@ -388,8 +427,10 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       cmdTimers.current.forEach(clearTimeout);
       cmdTimers.current = [];
       const at = (fn: () => void, ms: number) => cmdTimers.current.push(setTimeout(fn, ms));
-      setState({ cmdInput: raw, cmdIntent: intent, cmdStage: 'thinking' });
-      if (intent.kind === 'balance' || intent.kind === 'activity' || intent.kind === 'unknown') {
+      // A payment intent with no @username can't proceed — ask who to pay instead of guessing.
+      const needsRecipient = (intent.kind === 'send' || intent.kind === 'request' || intent.kind === 'recurring') && !intent.handle;
+      setState({ cmdInput: raw, cmdIntent: intent, cmdStage: 'thinking', cmdPrompt: needsRecipient ? 'recipient' : null });
+      if (needsRecipient || intent.kind === 'balance' || intent.kind === 'activity' || intent.kind === 'unknown') {
         at(() => setState({ cmdStage: 'answer' }), 850);
         return;
       }
@@ -409,10 +450,16 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       hooksRef.current
         .executeSend({ recipient: it.handle ?? '', amount: String(it.amount ?? '') })
         .then((r) => {
-          if (r.ok) setState({ cmdStage: 'done' });
-          else {
-            flash(r.error ?? 'Payment could not be completed.');
-            setState({ cmdStage: 'preview' });
+          if (r.ok) {
+            setState({
+              cmdStage: 'done',
+              cmdFailed: false,
+              cmdError: null,
+              cmdResult: { status: r.status ?? 'confirmed', txHash: r.txHash, explorerUrl: r.explorerUrl },
+            });
+          } else {
+            // Show the failure on the receipt (a real status the user asked for), not just a toast.
+            setState({ cmdStage: 'done', cmdFailed: true, cmdResult: { status: 'failed' }, cmdError: r.error ?? 'Payment could not be completed.' });
           }
         });
       return;
@@ -448,7 +495,28 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
     );
   }, [setState, flash]);
 
-  const cmdReset = useCallback(() => setState({ cmdStage: 'idle', cmdIntent: null, cmdInput: '' }), [setState]);
+  const cmdReset = useCallback(
+    () => setState({ cmdStage: 'idle', cmdIntent: null, cmdInput: '', cmdPrompt: null, cmdResult: null, cmdFailed: false, cmdError: null }),
+    [setState],
+  );
+
+  const addContactWith = useCallback(
+    (raw: string) => {
+      const name = raw.replace(/^@+/, '').trim().toLowerCase();
+      if (name.length < 3 || !hooksRef.current.addContact) return;
+      setState({ contactAdding: true });
+      hooksRef.current.addContact(name).then((r) => {
+        if (r.ok) {
+          setState({ contactAdd: '', contactAdding: false });
+          flash('Added @' + name);
+        } else {
+          setState({ contactAdding: false });
+          flash(r.error ?? 'Could not add contact.');
+        }
+      });
+    },
+    [setState, flash],
+  );
 
   const startSetupWith = useCallback((handleInput: string) => {
     if (handleInput.length < 3) return;
@@ -461,8 +529,10 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
     if (st.sendStep === 1) {
       const q = (st.sendTo || '').replace('@', '').trim().toLowerCase();
       if (q.length < 2) return;
-      const found = CONTACTS.find((c) => c[0].slice(1) === q);
-      setState({ sendPick: found || (['@' + q, 'PrivyPay user', q[0].toUpperCase(), '0x00…000'] as Contact), sendStep: 2 });
+      const found = contactsRef.current.find((c) => c[0].slice(1) === q);
+      // Not a known contact — carry the handle forward with a clear label (no fake address). The
+      // engine resolves the real @username server-side and rejects it if no such user exists.
+      setState({ sendPick: found || (['@' + q, 'Not in your contacts', q[0].toUpperCase(), ''] as Contact), sendStep: 2 });
       return;
     }
     if (st.sendStep === 2) {
@@ -568,7 +638,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       .filter((g) => g.rows.length);
 
     const cq = s.contactQuery.replace('@', '').toLowerCase();
-    const contactRows = CONTACTS.filter((c) => !cq || c[0].slice(1).includes(cq) || c[1].toLowerCase().includes(cq)).map(([h, name, initial, address]) => ({
+    const contactRows = contactsList.filter((c) => !cq || c[0].slice(1).includes(cq) || c[1].toLowerCase().includes(cq)).map(([h, name, initial, address]) => ({
       handle: h,
       name,
       initial,
@@ -588,17 +658,22 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
     const heroAt = heroOrder.indexOf(s.heroStage);
 
     const it = s.cmdIntent;
-    const itContact = it && it.handle ? CONTACTS.find((c) => c[0] === it.handle) : null;
+    const itContact = it && it.handle ? contactsList.find((c) => c[0].toLowerCase() === it.handle!.toLowerCase()) : null;
+    const cmdKnownContact = !!itContact;
     const cmdWorkingStage = s.cmdStage === 'thinking' || s.cmdStage === 'resolving';
     const cmdKindLabel: IntentKind | '' = it ? it.kind : '';
+
+    // Real receipt values from the confirmed send (no fabricated hash/status).
+    const receiptStatus = s.cmdFailed ? 'Failed' : s.cmdResult?.status === 'pending' ? 'Pending' : 'Completed';
+    const receiptHash = s.cmdResult?.txHash ? s.cmdResult.txHash.slice(0, 6) + '…' + s.cmdResult.txHash.slice(-4) : '';
 
     type Row = { label: string; value: string };
     const cmdMeta: Row[] =
       cmdKindLabel === 'send'
         ? [
-            { label: 'To', value: itContact ? itContact[3] : '0x00…000' },
+            { label: 'To', value: it?.handle ?? '' },
+            { label: 'Recipient', value: cmdKnownContact ? 'In your contacts' : 'Not in your contacts' },
             { label: 'Network', value: 'Celo' },
-            { label: 'Privacy', value: s.privacyOn ? 'Enabled' : 'Off' },
             { label: 'Estimated fee', value: '$0.001' },
           ]
         : cmdKindLabel === 'request'
@@ -620,8 +695,9 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
         ? [
             { label: 'To', value: it?.handle ?? '' },
             { label: 'Network', value: 'Celo' },
-            { label: 'Status', value: 'Completed' },
-            { label: 'Transaction', value: '0x8f…91a' },
+            { label: 'Status', value: receiptStatus },
+            ...(receiptHash ? [{ label: 'Transaction', value: receiptHash }] : []),
+            ...(s.cmdFailed && s.cmdError ? [{ label: 'Reason', value: s.cmdError }] : []),
           ]
         : cmdKindLabel === 'request'
           ? [
@@ -638,9 +714,11 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
               ]
             : [];
 
+    const needsRecipient = s.cmdPrompt === 'recipient';
     type AnswerRow = { handle: string; sub: string; amount: string; color: string };
-    const cmdAnswerRows: AnswerRow[] =
-      cmdKindLabel === 'activity'
+    const cmdAnswerRows: AnswerRow[] = needsRecipient
+      ? []
+      : cmdKindLabel === 'activity'
         ? TXS.slice(0, 3).map((t) => ({ handle: t.handle, sub: t.when, amount: (t.dir === 'out' ? '-$' : '+$') + money(t.amount), color: t.dir === 'out' ? '#0E1420' : '#167A54' }))
         : cmdKindLabel === 'balance'
           ? [
@@ -653,6 +731,16 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
             ];
 
     const emailValid = /.+@.+\..+/.test(s.email);
+
+    // Agent suggestions from the people you actually pay (your contacts), not demo names. With no
+    // contacts yet, only the info prompts show — never an invented @username.
+    const cmdPicks = contactsList.slice(0, 2);
+    const cmdSuggestionLabels = [
+      ...cmdPicks.map((c) => `Send $10 to ${c[0]}`),
+      ...(cmdPicks.length ? [`Request $20 from ${cmdPicks[0][0]}`] : []),
+      "What's my balance?",
+      'Show recent payments',
+    ];
 
     return {
       isLanding: s.view === 'landing',
@@ -712,7 +800,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
         const order: CmdStage[] = ['idle', 'thinking', 'resolving', 'preview', 'processing', 'done'];
         return { label, ...stepChrome(order.indexOf(s.cmdStage) > idx) };
       }),
-      cmdSuggestions: ['Send $20 to @sarah', 'Request $50 from @mike for the logo', 'Pay @designer $200 every Friday', "What's my balance?", 'Show recent payments'].map((label) => {
+      cmdSuggestions: cmdSuggestionLabels.map((label) => {
         // `runCmdWith` touches the cmd-timer ref, and the lint rule cannot see that
         // `keyFor` only stores the callback rather than invoking it during render.
         // eslint-disable-next-line react-hooks/refs
@@ -725,15 +813,36 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       cmdAnswer: s.cmdStage === 'answer',
       cmdPreviewTitle: cmdKindLabel === 'request' ? 'Payment request ready' : cmdKindLabel === 'recurring' ? 'Recurring payment ready' : 'Payment ready for confirmation',
       cmdConfirmLabel: cmdKindLabel === 'request' ? 'Send request' : cmdKindLabel === 'recurring' ? 'Confirm recurring payment' : 'Confirm payment',
-      cmdDoneTitle: cmdKindLabel === 'request' ? 'Request sent' : cmdKindLabel === 'recurring' ? 'Recurring payment created' : 'Payment sent',
+      cmdDoneTitle: s.cmdFailed
+        ? 'Payment failed'
+        : cmdKindLabel === 'request'
+          ? 'Request sent'
+          : cmdKindLabel === 'recurring'
+            ? 'Recurring payment created'
+            : 'Payment sent',
+      // The receipt icon reflects the real outcome: a red ✕ on failure, the accent ✓ on success.
+      cmdDoneMark: s.cmdFailed ? '✕' : '✓',
+      cmdDoneMarkBg: s.cmdFailed ? '#B42318' : '#1B45D7',
       cmdHandle: it && it.handle ? it.handle : '',
-      cmdName: itContact ? itContact[1] : it && it.handle ? 'PrivyPay user' : '',
+      cmdName: itContact ? itContact[1] : it && it.handle ? 'Not in your contacts' : '',
       cmdInitial: it && it.handle ? it.handle.charAt(1).toUpperCase() : '',
       cmdAmountStr: it && it.amount ? money(it.amount) : '0.00',
       cmdMetaRows: cmdMeta,
       cmdReceiptRows: cmdReceipt,
-      cmdAnswerLabel: cmdKindLabel === 'balance' ? 'Total balance' : cmdKindLabel === 'activity' ? 'Recent payments' : 'I can help with payments',
-      cmdAnswerValue: cmdKindLabel === 'balance' ? '$' + money(s.balance) + ' USDC' : cmdKindLabel === 'activity' ? 'Last three payments' : 'Try: Send $20 to @sarah',
+      cmdAnswerLabel: needsRecipient
+        ? 'Who should I pay?'
+        : cmdKindLabel === 'balance'
+          ? 'Total balance'
+          : cmdKindLabel === 'activity'
+            ? 'Recent payments'
+            : 'I can help with payments',
+      cmdAnswerValue: needsRecipient
+        ? 'Add a @username — e.g. Send $10 to @chris'
+        : cmdKindLabel === 'balance'
+          ? '$' + money(s.balance) + ' USDC'
+          : cmdKindLabel === 'activity'
+            ? 'Last three payments'
+            : 'Try: Send $10 to a @username',
       cmdAnswerRows,
 
       qrSmall: QR_SMALL,
@@ -869,6 +978,24 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       onContactQuery: (e: ChangeEvent<HTMLInputElement>) => setState({ contactQuery: e.target.value }),
       contactRows,
       noContacts: contactRows.length === 0,
+      contactsEmptyTitle: contactRows.length === 0 && !s.contactQuery ? 'No contacts yet' : 'No matches',
+      contactsEmptySub:
+        contactRows.length === 0 && !s.contactQuery
+          ? canAddContact
+            ? 'Add someone by their @username to pay them fast.'
+            : 'People you pay will appear here.'
+          : 'Try another username.',
+      // Add-a-contact affordance (real app only).
+      canAddContact,
+      contactAdd: s.contactAdd,
+      onContactAdd: (e: ChangeEvent<HTMLInputElement>) => setState({ contactAdd: e.target.value.replace(/[^a-z0-9_@]/gi, '').toLowerCase().slice(0, 21) }),
+      onContactAddKey: (e: KeyboardEvent) => {
+        if (e.key === 'Enter') addContactWith(s.contactAdd);
+      },
+      addContact: () => addContactWith(s.contactAdd),
+      contactAddLabel: s.contactAdding ? 'Adding…' : 'Add contact',
+      contactAddDisabled: s.contactAdding || s.contactAdd.replace(/^@+/, '').trim().length < 3,
+      contactAddOpacity: s.contactAdding || s.contactAdd.replace(/^@+/, '').trim().length < 3 ? '.5' : '1',
 
       reqTo: s.reqTo,
       reqAmount: s.reqAmount,
@@ -984,7 +1111,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       onSendKey: (e: KeyboardEvent) => {
         if (e.key === 'Enter') sendNextWith(s);
       },
-      sendSuggestions: CONTACTS.map(([h, name, initial, address]) => ({
+      sendSuggestions: contactsList.map(([h, name, initial, address]) => ({
         handle: h,
         name,
         initial,
@@ -1041,7 +1168,7 @@ export function useViewModel(startView: 'landing' | 'app' = 'landing', hooks: Vi
       toastShown: !!s.toast,
       toastText: s.toast || '',
     };
-  }, [s, setState, later, flash, nav, runCmdWith, cmdReset, cmdConfirmWith, startSetupWith, sendNextWith, startHero, heroConfirm]);
+  }, [s, contactsList, canAddContact, setState, later, flash, nav, runCmdWith, cmdReset, cmdConfirmWith, addContactWith, startSetupWith, sendNextWith, startHero, heroConfirm]);
 }
 
 export type Vals = ReturnType<typeof useViewModel>;

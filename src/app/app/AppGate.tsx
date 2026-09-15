@@ -9,6 +9,7 @@ import { useWallet } from '@/components/auth/useWallet';
 import { useBalance } from '@/components/auth/useBalance';
 import { usePayment } from '@/components/auth/usePayment';
 import { useActivity } from '@/components/auth/useActivity';
+import { useContacts } from '@/components/auth/useContacts';
 import { AccountMenu } from '@/components/app/AccountMenu';
 import { Spinner, Text } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
@@ -30,9 +31,10 @@ export default function AppGate() {
   const { balance, refresh: refreshBalance } = useBalance(walletAddress ?? wallet?.address ?? null);
   const { pay } = usePayment();
   const { items: activity, refresh: refreshActivity } = useActivity();
+  const { items: contacts, add: addContact } = useContacts();
   const router = useRouter();
 
-  // Real payment executor the agent card and send sheet drive through the engine.
+  // Real payment executor + contact management the agent card and send sheet drive.
   const hooks = useMemo(
     () => ({
       executeSend: async (args: { recipient: string; amount: string; memo?: string }) => {
@@ -40,12 +42,14 @@ export default function AppGate() {
         if (res.status === 'confirmed' || res.status === 'pending') {
           refreshBalance();
           refreshActivity();
-          return { ok: true as const };
+          // Pass the real outcome through so the agent card shows a truthful receipt.
+          return { ok: true as const, status: res.status, txHash: res.txHash, explorerUrl: res.explorerUrl };
         }
         return { ok: false as const, error: res.error ?? 'Payment failed.' };
       },
+      addContact: (username: string) => addContact(username),
     }),
-    [pay, refreshBalance, refreshActivity],
+    [pay, refreshBalance, refreshActivity, addContact],
   );
 
   useEffect(() => {
@@ -85,6 +89,7 @@ export default function AppGate() {
           walletAddress: walletAddress ?? wallet?.address,
           balance: balance ?? undefined,
           activity,
+          contacts,
         }}
         hooks={hooks}
       />
