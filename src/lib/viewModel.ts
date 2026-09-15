@@ -900,6 +900,8 @@ export function useViewModel(
       appRecurring
         ? appRecurring.map((r) => ({ id: r.id, handle: r.counterparty, amount: money(parseFloat(r.amount)), cadence: r.cadence, next: r.next, paused: r.paused }))
         : s.recurring;
+    // The dashboard "Next recurring payment" card shows the soonest active schedule (or none).
+    const nextRecurring = recurringSource.find((r) => !r.paused) ?? recurringSource[0] ?? null;
 
     return {
       isLanding: s.view === 'landing',
@@ -1187,6 +1189,10 @@ export function useViewModel(
         onCancel: () => cancelRecurringWith(r),
       })),
       noRecurring: recurringSource.length === 0,
+      hasRecurring: !!nextRecurring,
+      nextRecurringAmount: nextRecurring ? nextRecurring.amount : '0.00',
+      nextRecurringHandle: nextRecurring ? nextRecurring.handle : '',
+      nextRecurringWhen: nextRecurring ? nextRecurring.next + ' · ' + nextRecurring.cadence : '',
 
       serviceRows: SERVICES.map(([k, name, desc, markBg, markBorder]) => {
         const on = !!s.connections[k];

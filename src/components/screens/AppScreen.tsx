@@ -370,17 +370,25 @@ export default function AppScreen({ v }: { v: Vals }) {
                       <div style={{ "fontSize": "13px", "color": "#5F6878" }}>
                         {"Next recurring payment"}
                       </div>
-                      <div style={{ "display": "flex", "alignItems": "baseline", "gap": "10px", "marginTop": "8px" }}>
-                        <div style={{ "fontSize": "22px", "fontWeight": "600", "letterSpacing": "-.025em", "fontVariantNumeric": "tabular-nums" }}>
-                          {"$200.00"}
+                      {v.hasRecurring ? (
+                        <>
+                          <div style={{ "display": "flex", "alignItems": "baseline", "gap": "10px", "marginTop": "8px" }}>
+                            <div style={{ "fontSize": "22px", "fontWeight": "600", "letterSpacing": "-.025em", "fontVariantNumeric": "tabular-nums" }}>
+                              {"$"}{v.nextRecurringAmount}
+                            </div>
+                            <div style={{ "fontSize": "14px", "color": "#5B6472" }}>
+                              {"to "}{v.nextRecurringHandle}
+                            </div>
+                          </div>
+                          <div style={{ "fontSize": "13px", "color": "#5F6878", "marginTop": "6px" }}>
+                            {v.nextRecurringWhen}
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ "fontSize": "14px", "color": "#5F6878", "marginTop": "8px" }}>
+                          {"None scheduled"}
                         </div>
-                        <div style={{ "fontSize": "14px", "color": "#5B6472" }}>
-                          {"to @designer"}
-                        </div>
-                      </div>
-                      <div style={{ "fontSize": "13px", "color": "#5F6878", "marginTop": "6px" }}>
-                        {"Friday, Sep 18 · every Friday"}
-                      </div>
+                      )}
                       <div style={{ "display": "flex", "gap": "16px", "marginTop": "16px", "paddingTop": "16px", "borderTop": "1px solid #F0F1F4" }}>
                         <div style={{ "flex": "1" }}>
                           <div style={{ "fontSize": "12px", "color": "#5F6878" }}>
@@ -509,19 +517,19 @@ export default function AppScreen({ v }: { v: Vals }) {
                             <div style={{ "fontSize": "12px", "color": "#5F6878", "marginBottom": "6px" }}>
                               {"From"}
                             </div>
-                            <input className="scp6" value={v.reqTo} onChange={v.onReqTo} placeholder="@mike" style={{ "width": "100%", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 13px", "fontSize": "14.5px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
+                            <input className="scp6" value={v.reqTo} onChange={v.onReqTo} placeholder="@username" style={{ "width": "100%", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 13px", "fontSize": "14.5px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
                           </div>
                           <div>
                             <div style={{ "fontSize": "12px", "color": "#5F6878", "marginBottom": "6px" }}>
                               {"Amount"}
                             </div>
-                            <input className="scp6" value={v.reqAmount} onChange={v.onReqAmount} placeholder="250" style={{ "width": "100%", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 13px", "fontSize": "14.5px", "outline": "none", "fontVariantNumeric": "tabular-nums", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
+                            <input className="scp6" value={v.reqAmount} onChange={v.onReqAmount} placeholder="50" style={{ "width": "100%", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 13px", "fontSize": "14.5px", "outline": "none", "fontVariantNumeric": "tabular-nums", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
                           </div>
                           <div>
                             <div style={{ "fontSize": "12px", "color": "#5F6878", "marginBottom": "6px" }}>
                               {"For"}
                             </div>
-                            <input className="scp6" value={v.reqNote} onChange={v.onReqNote} placeholder="Logo design" style={{ "width": "100%", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 13px", "fontSize": "14.5px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
+                            <input className="scp6" value={v.reqNote} onChange={v.onReqNote} placeholder="What's it for?" style={{ "width": "100%", "border": "1px solid #DCE0E7", "background": "#fff", "borderRadius": "10px", "padding": "11px 13px", "fontSize": "14.5px", "outline": "none", "transition": "border-color .16s ease,box-shadow .16s ease" }} />
                           </div>
                         </div>
                         <button className="scpd scpe" onClick={v.createRequest} style={{ "marginTop": "14px", "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14.5px", "fontWeight": "500", "padding": "12px 20px", "borderRadius": "10px", "cursor": "pointer", "opacity": v.reqOpacity, "transition": "background .16s ease,opacity .16s ease" }}>
