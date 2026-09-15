@@ -31,5 +31,6 @@ export {
   DownloadSimple as ReceiveNavIcon,
   LinkSimple as LinkIcon,
   SlidersHorizontal as SettingsNavIcon,
+  DotsThreeOutline as MoreIcon,
   type Icon,
 } from '@phosphor-icons/react';

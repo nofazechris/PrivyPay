@@ -1088,7 +1088,7 @@ export function useViewModel(
       },
 
       navGroups,
-      mobileNav: ([['overview', 'Home'], ['payments', 'Payments'], ['requests', 'Requests'], ['contacts', 'Contacts'], ['settings', 'Settings']] as Array<[Page, string]>).map(([k, label]) => {
+      mobileNav: ([['overview', 'Home'], ['payments', 'Payments'], ['requests', 'Requests'], ['contacts', 'Contacts']] as Array<[Page, string]>).map(([k, label]) => {
         const active = s.page === k;
         return { key: k, label, onClick: nav(k), dot: active ? '#1B45D7' : 'transparent', color: active ? '#153AB4' : '#5F6878', weight: active ? '600' : '450' };
       }),

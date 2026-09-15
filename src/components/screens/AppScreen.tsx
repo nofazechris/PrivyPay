@@ -1,7 +1,8 @@
 // AUTO-GENERATED from "PrivyPay v3.dc.html" — do not edit by hand.
 // Regenerate with: npm run design:build
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import type { Vals } from '@/lib/viewModel';
+import { Modal } from '@/components/ui/Modal';
 import { AgentPayments } from '@/components/app/AgentPayments';
 import { ServiceConnect } from '@/components/app/ServiceConnect';
 import {
@@ -15,6 +16,7 @@ import {
   LinkIcon,
   PrivacyIcon,
   SettingsNavIcon,
+  MoreIcon,
   type Icon,
 } from '@/components/ui/icons';
 
@@ -33,6 +35,9 @@ const NAV_ICONS: Record<string, Icon> = {
 };
 
 export default function AppScreen({ v }: { v: Vals }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  // Every page as an icon tile for the mobile "More" sheet (the bar only holds four).
+  const morePages = v.navGroups.flatMap((g) => g.items);
   return (
     <>
       <div style={{ "display": "flex", "minHeight": "100vh" }}>
@@ -96,8 +101,10 @@ export default function AppScreen({ v }: { v: Vals }) {
         ) : null}
         <div style={{ "flex": "1", "minWidth": "0", "paddingBottom": v.mainPadBottom }}>
           <div style={{ "borderBottom": "1px solid #E8EAEF", "background": "rgba(246,247,249,.92)", "backdropFilter": "blur(8px)", "position": "sticky", "top": "0", "zIndex": "20" }}>
-            <div style={{ "maxWidth": "1020px", "margin": "0 auto", "padding": "15px 24px", "display": "flex", "alignItems": "center", "gap": "12px", "flexWrap": "wrap" }}>
-              <div style={{ "flex": "1", "minWidth": "160px" }}>
+            {/* Clean header: page title only. Actions live on the pages (Overview quick actions,
+                Wallet, Contacts); the account chip sits top-right (AccountMenu). */}
+            <div style={{ "maxWidth": "1020px", "margin": "0 auto", "padding": "15px 24px", "display": "flex", "alignItems": "center", "gap": "12px", "minHeight": "58px" }}>
+              <div style={{ "flex": "1", "minWidth": "0", "paddingRight": "120px" }}>
                 <div style={{ "fontSize": "19px", "fontWeight": "600", "letterSpacing": "-.025em" }}>
                   {v.pageHeading}
                 </div>
@@ -105,12 +112,6 @@ export default function AppScreen({ v }: { v: Vals }) {
                   {v.pageSub}
                 </div>
               </div>
-              <button className="scpd scpg" onClick={v.openSend} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "10px 16px", "borderRadius": "10px", "cursor": "pointer", "transition": "background .16s ease" }}>
-                {"Send"}
-              </button>
-              <button className="scp5" onClick={v.openReceive} style={{ "border": "1px solid #DCE0E7", "background": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "10px 16px", "borderRadius": "10px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
-                {"Receive"}
-              </button>
             </div>
           </div>
           {v.isOverview ? (
@@ -1021,9 +1022,37 @@ export default function AppScreen({ v }: { v: Vals }) {
                   </div>
                 </Fragment>
               ))}
+              <div onClick={() => setMoreOpen(true)} style={{ "flex": "1", "textAlign": "center", "padding": "8px 2px", "cursor": "pointer", "minHeight": "48px", "display": "flex", "flexDirection": "column", "alignItems": "center", "justifyContent": "center", "gap": "5px" }}>
+                <MoreIcon size={20} color="#5F6878" weight="regular" />
+                <span style={{ "fontSize": "11.5px", "color": "#5F6878", "fontWeight": "450" }}>
+                  {"More"}
+                </span>
+              </div>
             </div>
           </>
         ) : null}
+        <Modal open={moreOpen} onClose={() => setMoreOpen(false)} placement="bottom" title="Menu" maxWidth={440}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            {morePages.map((p, i) => {
+              const Ico = NAV_ICONS[p.key];
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    p.onClick();
+                    setMoreOpen(false);
+                  }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '16px 8px', border: '1px solid #EDEFF3', background: '#FBFBFD', borderRadius: '12px', cursor: 'pointer' }}
+                >
+                  <span style={{ width: '38px', height: '38px', borderRadius: '11px', background: '#EDF1FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {Ico ? <Ico size={19} color="#1B45D7" weight="regular" /> : null}
+                  </span>
+                  <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#0E1420', textAlign: 'center' }}>{p.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Modal>
       </div>
       {v.sheetOpen ? (
         <>
