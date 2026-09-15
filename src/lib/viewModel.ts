@@ -1194,28 +1194,6 @@ export function useViewModel(
       nextRecurringHandle: nextRecurring ? nextRecurring.handle : '',
       nextRecurringWhen: nextRecurring ? nextRecurring.next + ' · ' + nextRecurring.cadence : '',
 
-      // Real connect: ChatGPT/Claude connect over MCP (the button jumps to "Connect an agent",
-      // where you generate a token + copy the endpoint). WhatsApp isn't built yet — coming soon.
-      serviceRows: SERVICES.map(([k, name, desc, markBg, markBorder]) => {
-        const comingSoon = k === 'whatsapp';
-        return {
-          name,
-          desc,
-          markBg,
-          markBorder,
-          isChatgpt: k === 'chatgpt',
-          isClaude: k === 'claude',
-          isWhatsapp: k === 'whatsapp',
-          connectable: !comingSoon,
-          stateLabel: comingSoon ? 'Coming soon' : 'Available via MCP',
-          stateColor: comingSoon ? '#8A6A1E' : '#5F6878',
-          dot: comingSoon ? '#D8A93A' : '#D2D7DF',
-          ctaLabel: comingSoon ? 'Coming soon' : 'Connect',
-          ctaBg: comingSoon ? '#F2F3F6' : '#1B45D7',
-          ctaColor: comingSoon ? '#8A93A6' : '#fff',
-          ctaBorder: comingSoon ? '#E4E7EC' : '#1B45D7',
-        };
-      }),
       mcpTools: MCP_TOOLS.map(([name, mode]) => ({ name, mode, color: mode === 'Read' ? '#5F6878' : '#153AB4' })),
       connectedLimits: [
         { label: 'Per payment cap', value: '$500.00' },

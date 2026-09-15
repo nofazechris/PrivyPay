@@ -4,6 +4,7 @@ import { Fragment } from 'react';
 import type { Vals } from '@/lib/viewModel';
 import { McpTokens } from '@/components/app/McpTokens';
 import { AgentPayments } from '@/components/app/AgentPayments';
+import { ServiceConnect } from '@/components/app/ServiceConnect';
 import {
   OverviewIcon,
   PaymentsIcon,
@@ -805,58 +806,7 @@ export default function AppScreen({ v }: { v: Vals }) {
           {v.isConnected ? (
             <>
               <div data-screen-label="Connected services" style={{ "maxWidth": "1020px", "margin": "0 auto", "padding": "22px 24px 40px", "animation": "pp-fade .22s ease both" }}>
-                <div style={{ "display": "grid", "gridTemplateColumns": "repeat(auto-fit,minmax(272px,1fr))", "gap": "12px" }}>
-                  {v.serviceRows.map((sv, i) => (
-                    <Fragment key={i}>
-                      <div className="scpm" style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "22px", "display": "flex", "flexDirection": "column", "transition": "transform .18s ease,box-shadow .18s ease" }}>
-                        <div style={{ "display": "flex", "alignItems": "center", "gap": "12px" }}>
-                          <div style={{ "width": "38px", "height": "38px", "borderRadius": "11px", "background": sv.markBg, "border": `1px solid ${sv.markBorder}`, "display": "flex", "alignItems": "center", "justifyContent": "center", "overflow": "hidden", "flex": "none" }}>
-                            {sv.isChatgpt ? (
-                              <>
-                                <img src="/assets/logo-chatgpt.png" alt="ChatGPT" style={{ "width": "24px", "height": "24px", "objectFit": "contain" }} />
-                              </>
-                            ) : null}
-                            {sv.isClaude ? (
-                              <>
-                                <img src="/assets/logo-claude.png" alt="Claude" style={{ "width": "24px", "height": "24px", "borderRadius": "6px", "objectFit": "contain" }} />
-                              </>
-                            ) : null}
-                            {sv.isWhatsapp ? (
-                              <>
-                                <img src="/assets/logo-whatsapp.png" alt="WhatsApp" style={{ "width": "24px", "height": "24px", "objectFit": "contain" }} />
-                              </>
-                            ) : null}
-                          </div>
-                          <div style={{ "minWidth": "0" }}>
-                            <div style={{ "fontSize": "15.5px", "fontWeight": "600", "letterSpacing": "-.015em" }}>
-                              {sv.name}
-                            </div>
-                            <div style={{ "display": "flex", "alignItems": "center", "gap": "6px", "marginTop": "3px" }}>
-                              <span style={{ "width": "5px", "height": "5px", "borderRadius": "50%", "background": sv.dot, "display": "inline-block" }}></span>
-                              <span style={{ "fontSize": "12.5px", "color": sv.stateColor }}>
-                                {sv.stateLabel}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <p style={{ "fontSize": "13.5px", "color": "#5B6472", "lineHeight": "1.6", "margin": "14px 0 18px" }}>
-                          {sv.desc}
-                        </p>
-                        <button
-                          className="scp5"
-                          onClick={() => {
-                            if (!sv.connectable) return;
-                            document.getElementById('pp-connect-agent')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }}
-                          disabled={!sv.connectable}
-                          style={{ "marginTop": "auto", "width": "100%", "border": `1px solid ${sv.ctaBorder}`, "background": sv.ctaBg, "color": sv.ctaColor, "fontSize": "14px", "fontWeight": "500", "padding": "11px", "borderRadius": "10px", "cursor": sv.connectable ? "pointer" : "default", "transition": "background .16s ease,border-color .16s ease" }}
-                        >
-                          {sv.ctaLabel}
-                        </button>
-                      </div>
-                    </Fragment>
-                  ))}
-                </div>
+                <ServiceConnect />
                 <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "22px", "marginTop": "16px" }}>
                   <div style={{ "display": "flex", "alignItems": "center", "gap": "10px", "flexWrap": "wrap" }}>
                     <div style={{ "fontSize": "15px", "fontWeight": "600" }}>
