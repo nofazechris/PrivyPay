@@ -53,6 +53,8 @@ const schema = z.object({
   // Integrations (Stages 14–17)
   MCP_SECRET: z.string().min(1).optional(),
   WHATSAPP_WEBHOOK_SECRET: z.string().min(1).optional(),
+  /** Shared secret protecting the recurring-execution cron endpoint. Absent → endpoint disabled. */
+  CRON_SECRET: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof schema>;

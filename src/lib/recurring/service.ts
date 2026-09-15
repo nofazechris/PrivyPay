@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, lte } from 'drizzle-orm';
 import { formatUnits, parseUnits } from 'viem';
 import { getDb, schema } from '@/lib/db';
 import { activeNetwork, getToken } from '@/lib/config';
@@ -150,6 +150,51 @@ export async function setRecurringPaused(id: string, ownerUserId: string, paused
     .set({ status: paused ? 'paused' : 'active', nextRun: paused ? row.nextRun : computeNextRun(row.cadence), updatedAt: new Date() })
     .where(eq(schema.recurringPayments.id, id));
   return { ok: true };
+}
+
+export interface DueRecurring {
+  id: string;
+  ownerUserId: string;
+  payeeUsername: string;
+  /** Amount in the token's smallest unit (decimal string). */
+  amountRaw: string;
+  cadence: string;
+  nextRun: Date;
+}
+
+/** Active schedules whose next run is due (nextRun <= now), soonest first. For the worker only. */
+export async function listDueRecurring(limit = 50): Promise<DueRecurring[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: schema.recurringPayments.id,
+      ownerUserId: schema.recurringPayments.ownerUserId,
+      amountRaw: schema.recurringPayments.amount,
+      cadence: schema.recurringPayments.cadence,
+      nextRun: schema.recurringPayments.nextRun,
+      payeeUsername: schema.profiles.username,
+    })
+    .from(schema.recurringPayments)
+    .innerJoin(schema.profiles, eq(schema.profiles.userId, schema.recurringPayments.payeeUserId))
+    .where(and(eq(schema.recurringPayments.status, 'active'), lte(schema.recurringPayments.nextRun, new Date())))
+    .orderBy(schema.recurringPayments.nextRun)
+    .limit(limit);
+  // nextRun is non-null for active schedules; guard anyway.
+  return rows
+    .filter((r) => r.nextRun)
+    .map((r) => ({ id: r.id, ownerUserId: r.ownerUserId, payeeUsername: r.payeeUsername, amountRaw: r.amountRaw, cadence: r.cadence, nextRun: r.nextRun as Date }));
+}
+
+/** Move a schedule to its next occurrence (computed from now, so missed periods don't stack up). */
+export async function advanceRecurring(id: string): Promise<void> {
+  const db = getDb();
+  const rows = await db.select().from(schema.recurringPayments).where(eq(schema.recurringPayments.id, id)).limit(1);
+  const row = rows[0];
+  if (!row) return;
+  await db
+    .update(schema.recurringPayments)
+    .set({ nextRun: computeNextRun(row.cadence), updatedAt: new Date() })
+    .where(eq(schema.recurringPayments.id, id));
 }
 
 /** Cancel a recurring payment the caller owns. */
