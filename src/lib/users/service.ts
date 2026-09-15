@@ -51,6 +51,15 @@ export async function getOrCreateUser(privyDid: string, email?: string | null): 
   return { id: u.id, privyDid: u.privyDid, email: u.email };
 }
 
+/** Look up an internal user by id (e.g. to reach their Privy DID for server-side wallet ops). */
+export async function getUserById(userId: string): Promise<AppUser | null> {
+  const db = getDb();
+  const rows = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+  if (rows.length === 0) return null;
+  const u = rows[0];
+  return { id: u.id, privyDid: u.privyDid, email: u.email };
+}
+
 export async function getProfileByUserId(userId: string): Promise<Profile | null> {
   const db = getDb();
   const rows = await db.select().from(schema.profiles).where(eq(schema.profiles.userId, userId)).limit(1);

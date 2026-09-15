@@ -1,7 +1,9 @@
 import 'server-only';
+import { and, eq, gte, inArray } from 'drizzle-orm';
 import { parseUnits } from 'viem';
 import { activeNetwork, getToken } from '@/lib/config';
 import { getUsdcBalance } from '@/lib/celo/balance';
+import { getDb, schema } from '@/lib/db';
 import type { PolicyCheck, PolicyResult } from '@/lib/policy';
 
 /**
@@ -10,15 +12,41 @@ import type { PolicyCheck, PolicyResult } from '@/lib/policy';
  * unit as BigInts — never floats.
  */
 
-// Per-payment cap (§32/§69). Conservative default; configurable per user later.
+// Per-payment and rolling daily caps (§32/§69). Conservative defaults; per-user config later.
+// The daily cap matters most for the delegated/agent path, where a payment can settle without
+// the user tapping each one.
 const PER_PAYMENT_CAP_USDC = '500';
+const DAILY_CAP_USDC = '1000';
+
+// Statuses that represent a committed same-day outflow counting toward the daily cap.
+const COMMITTED_STATUSES = ['AUTHORIZED', 'PREPARING', 'SIGNING', 'BROADCASTING', 'PENDING', 'CONFIRMED'];
 
 export interface PaymentPolicyContext {
+  /** Internal sender user id, for the rolling daily-cap check. Omit to skip that check. */
+  senderUserId?: string;
   senderWalletAddress: string;
   recipientAddress: string;
   token: string;
   /** Amount in the token's smallest unit (decimal string), matching the stored payment. */
   amountRaw: string;
+}
+
+/** Sum of the sender's committed payments since the start of the current UTC day, smallest unit. */
+async function spentTodayRaw(senderUserId: string): Promise<bigint> {
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  const db = getDb();
+  const rows = await db
+    .select({ amount: schema.payments.amount })
+    .from(schema.payments)
+    .where(
+      and(
+        eq(schema.payments.senderUserId, senderUserId),
+        gte(schema.payments.createdAt, start),
+        inArray(schema.payments.status, COMMITTED_STATUSES),
+      ),
+    );
+  return rows.reduce((sum, r) => sum + BigInt(r.amount), BigInt(0));
 }
 
 function deny(check: PolicyCheck, reason: string): PolicyResult {
@@ -39,6 +67,15 @@ export async function evaluatePaymentPolicy(ctx: PaymentPolicyContext): Promise<
 
   const cap = parseUnits(PER_PAYMENT_CAP_USDC, token.decimals);
   if (amount > cap) return deny('transaction_limits', `Amount exceeds the per-payment limit of $${PER_PAYMENT_CAP_USDC}.`);
+
+  // Rolling daily cap — total committed today plus this payment must stay within the limit.
+  if (ctx.senderUserId) {
+    const dailyCap = parseUnits(DAILY_CAP_USDC, token.decimals);
+    const spent = await spentTodayRaw(ctx.senderUserId);
+    if (spent + amount > dailyCap) {
+      return deny('transaction_limits', `This would exceed your daily limit of $${DAILY_CAP_USDC}.`);
+    }
+  }
 
   if (!/^0x[0-9a-fA-F]{40}$/.test(ctx.recipientAddress)) return deny('valid_recipient', 'Invalid recipient address.');
 

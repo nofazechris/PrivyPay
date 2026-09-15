@@ -3,6 +3,7 @@
 import { Fragment } from 'react';
 import type { Vals } from '@/lib/viewModel';
 import { McpTokens } from '@/components/app/McpTokens';
+import { AgentPayments } from '@/components/app/AgentPayments';
 import {
   OverviewIcon,
   PaymentsIcon,
@@ -876,6 +877,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                   </div>
                 </div>
                 <McpTokens />
+                <AgentPayments />
                 <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "22px", "marginTop": "16px" }}>
                   <div style={{ "fontSize": "15px", "fontWeight": "600" }}>
                     {"How connected services work"}

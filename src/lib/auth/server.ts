@@ -26,14 +26,17 @@ function getClient(): PrivyClient | null {
   const appId = env.PRIVY_APP_ID;
   const appSecret = env.PRIVY_APP_SECRET;
   if (!appId || !appSecret) return null;
-  client = new PrivyClient(appId, appSecret);
+  // The authorization key is only needed for server-side wallet signing (delegated actions).
+  // It's harmless for token verification, so include it whenever configured.
+  const authorizationPrivateKey = env.PRIVY_AUTHORIZATION_KEY;
+  client = new PrivyClient(appId, appSecret, authorizationPrivateKey ? { walletApi: { authorizationPrivateKey } } : undefined);
   return client;
 }
 
 /** The user's Privy embedded EVM wallet address, or null if none is provisioned yet. */
 export async function getPrivyEmbeddedWallet(
   privyDid: string,
-): Promise<{ address: string; walletId: string | null } | null> {
+): Promise<{ address: string; walletId: string | null; delegated: boolean } | null> {
   const privy = getClient();
   if (!privy) return null;
   const user = await privy.getUser(privyDid);
@@ -42,7 +45,31 @@ export async function getPrivyEmbeddedWallet(
   );
   if (!wallet || !('address' in wallet) || typeof wallet.address !== 'string') return null;
   const walletId = 'id' in wallet && typeof wallet.id === 'string' ? wallet.id : null;
-  return { address: wallet.address, walletId };
+  const delegated = 'delegated' in wallet && wallet.delegated === true;
+  return { address: wallet.address, walletId, delegated };
+}
+
+/**
+ * Broadcast a USDC transfer from a user's *delegated* embedded wallet, server-side. Privy signs
+ * inside its TEE (keys never reach us); this only works when the user has delegated the wallet
+ * (§ MCP "confirm in agent") and an authorization key is configured. Returns the tx hash, or
+ * throws — callers translate a failure into a safe in-app-approval fallback.
+ */
+export async function sendDelegatedTransaction(input: {
+  walletId: string;
+  chainId: number;
+  to: string;
+  data: string;
+}): Promise<{ hash: string }> {
+  const privy = getClient();
+  if (!privy) throw new Error('Wallet signing is not configured.');
+  if (!env.PRIVY_AUTHORIZATION_KEY) throw new Error('Server signing requires PRIVY_AUTHORIZATION_KEY.');
+  const res = await privy.walletApi.ethereum.sendTransaction({
+    walletId: input.walletId,
+    caip2: `eip155:${input.chainId}`,
+    transaction: { to: input.to as `0x${string}`, data: input.data as `0x${string}`, value: '0x0' },
+  });
+  return { hash: res.hash };
 }
 
 /**

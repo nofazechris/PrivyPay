@@ -7,7 +7,7 @@ import { getProfileByUserId, resolveUsername } from '@/lib/users/service';
 import { normalizeUsername } from '@/lib/users/username';
 import { getWalletByUserId } from '@/lib/wallets/service';
 import { getUsdcBalance } from '@/lib/celo/balance';
-import { previewPayment, authorizePayment, confirmPayment, listPayments } from '@/lib/payments/engine';
+import { previewPayment, authorizePayment, confirmPayment, executeAuthorizedPayment, listPayments } from '@/lib/payments/engine';
 import { listContacts } from '@/lib/contacts/service';
 import { createRequest } from '@/lib/requests/service';
 
@@ -184,7 +184,7 @@ export const TOOLS: ToolDef[] = [
   tool({
     name: 'confirm_payment',
     description:
-      'Authorize a previewed payment for settlement: re-runs policy and issues a single-use authorization bound to this exact payment. The user must give final approval in PrivyPay to sign and broadcast — this tool never signs and never claims the payment succeeded.',
+      'Confirm a previewed payment: re-runs policy and issues a single-use authorization bound to this exact payment, then settles it. If the user has enabled agent payments (delegated their wallet), Privy signs and broadcasts server-side and this returns the on-chain status. Otherwise it returns awaiting_approval for the user to sign in PrivyPay. Never claims success without an on-chain receipt; never handles a key.',
     mutating: true,
     schema: z.object({ paymentId: z.string().min(1) }),
     handler: async (ctx, args) => {
@@ -192,10 +192,26 @@ export const TOOLS: ToolDef[] = [
       if (!wallet) throw new ToolError('no_wallet', 'No wallet is provisioned for this account yet.');
       const res = await authorizePayment({ paymentId: args.paymentId, userId: ctx.userId, senderWalletAddress: wallet.address });
       if (!res.ok) throw new ToolError('authorize_failed', res.error);
+
+      // Settle server-side when the wallet is delegated; otherwise hand back for in-app approval.
+      const exec = await executeAuthorizedPayment({ paymentId: args.paymentId, userId: ctx.userId, authorizationId: res.authorizationId });
+      if (exec.ok) {
+        return {
+          paymentId: args.paymentId,
+          status: exec.status, // PENDING until the receipt confirms — never a premature success
+          txHash: exec.txHash,
+          explorerUrl: txExplorerUrl(exec.txHash),
+          poll: 'Use get_payment_status to confirm settlement (CONFIRMED).',
+        };
+      }
       return {
         paymentId: args.paymentId,
         status: 'awaiting_approval',
-        message: 'Authorized by policy. The user must approve this payment in PrivyPay to sign and broadcast it.',
+        reason: exec.code, // not_delegated | not_configured
+        message:
+          exec.code === 'not_delegated'
+            ? 'Authorized by policy. Enable agent payments in PrivyPay (delegate your wallet) to let the agent settle, or approve this payment in the app to sign it.'
+            : 'Authorized by policy. The user must approve this payment in PrivyPay to sign and broadcast it.',
         approveUrl: (env.NEXT_PUBLIC_SITE_URL ?? '') + '/app',
         poll: 'Use get_payment_status to watch for CONFIRMED.',
       };

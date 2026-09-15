@@ -35,6 +35,13 @@ const schema = z.object({
   PRIVY_APP_ID: z.string().min(1).optional(),
   PRIVY_APP_SECRET: z.string().min(1).optional(),
   NEXT_PUBLIC_PRIVY_APP_ID: z.string().min(1).optional(),
+  /**
+   * Privy authorization key (private) for server-side wallet signing via delegated actions.
+   * Required only for the MCP "confirm in agent" path, where the server settles a delegated
+   * wallet's payment without the app. Absent → server signing is disabled and confirm_payment
+   * falls back to in-app approval. Server-only secret; never exposed to the client.
+   */
+  PRIVY_AUTHORIZATION_KEY: z.string().min(1).optional(),
 
   // Celo settlement (Stage 6 / §13–15). Chain id and RPC per network; addresses stay in
   // config so nothing chain-specific is hard-coded across the app.

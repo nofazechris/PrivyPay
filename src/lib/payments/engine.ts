@@ -2,9 +2,10 @@ import 'server-only';
 import { and, eq } from 'drizzle-orm';
 import { formatUnits, parseUnits } from 'viem';
 import { getDb, schema } from '@/lib/db';
-import { activeNetwork, getToken, txExplorerUrl } from '@/lib/config';
+import { activeNetwork, env, getToken, txExplorerUrl } from '@/lib/config';
 import { normalizeUsername } from '@/lib/users/username';
-import { resolveUsername } from '@/lib/users/service';
+import { resolveUsername, getUserById } from '@/lib/users/service';
+import { getPrivyEmbeddedWallet, sendDelegatedTransaction } from '@/lib/auth/server';
 import { buildUsdcTransfer, type PreparedUsdcTransfer } from '@/lib/celo/transaction';
 import { celoClient } from '@/lib/celo/client';
 import { assertTransition, type PaymentStatus } from './state';
@@ -139,6 +140,7 @@ export async function authorizePayment(input: { paymentId: string; userId: strin
   if (payment.status !== 'PREVIEW') return { ok: false, error: 'Payment is not awaiting authorization.' };
 
   const policy = await evaluatePaymentPolicy({
+    senderUserId: payment.senderUserId,
     senderWalletAddress: input.senderWalletAddress,
     recipientAddress: payment.recipientAddress,
     token: payment.token,
@@ -163,6 +165,59 @@ export async function authorizePayment(input: { paymentId: string; userId: strin
   // The client must sign with exactly this wallet — the one policy validated and authorized —
   // never "whatever wallet is first" (§80). A user can hold more than one embedded wallet.
   return { ok: true, authorizationId: auth.id, prepared, from: input.senderWalletAddress };
+}
+
+/**
+ * Settle an AUTHORIZED payment server-side via the user's delegated Privy wallet (§ MCP "confirm
+ * in agent"). Reuses the same authorization + broadcast + confirmation path as the client flow —
+ * Privy signs in its TEE, we never see a key. Returns a typed reason when the wallet isn't
+ * delegated or signing isn't configured, so callers can fall back to in-app approval rather than
+ * failing the request. Never reports success without an on-chain receipt.
+ */
+export async function executeAuthorizedPayment(input: {
+  paymentId: string;
+  userId: string;
+  authorizationId: string;
+}): Promise<
+  | { ok: true; status: string; txHash: string }
+  | { ok: false; code: 'not_delegated' | 'not_configured' | 'error'; error: string }
+> {
+  const payment = await loadOwned(input.paymentId, input.userId);
+  if (!payment) return { ok: false, code: 'error', error: 'Payment not found.' };
+  if (payment.status !== 'AUTHORIZED') return { ok: false, code: 'error', error: 'Payment is not authorized.' };
+  if (!env.PRIVY_AUTHORIZATION_KEY) return { ok: false, code: 'not_configured', error: 'Server signing is not configured.' };
+
+  const appUser = await getUserById(input.userId);
+  if (!appUser) return { ok: false, code: 'error', error: 'User not found.' };
+  const wallet = await getPrivyEmbeddedWallet(appUser.privyDid);
+  if (!wallet || !wallet.walletId) return { ok: false, code: 'error', error: 'No embedded wallet to sign with.' };
+  if (!wallet.delegated) return { ok: false, code: 'not_delegated', error: 'Wallet is not delegated for server signing.' };
+
+  const decimals = getToken(payment.token, activeNetwork.network)?.decimals ?? 6;
+  const prepared = buildUsdcTransfer(payment.recipientAddress, formatUnits(BigInt(payment.amount), decimals));
+
+  let hash: string;
+  try {
+    const sent = await sendDelegatedTransaction({ walletId: wallet.walletId, chainId: payment.chainId, to: prepared.to, data: prepared.data });
+    hash = sent.hash;
+  } catch (e) {
+    return { ok: false, code: 'error', error: e instanceof Error ? e.message : 'Server signing failed.' };
+  }
+
+  const rec = await recordBroadcast({ paymentId: payment.id, userId: input.userId, authorizationId: input.authorizationId, txHash: hash });
+  if (!rec.ok) return { ok: false, code: 'error', error: rec.error };
+
+  // Poll briefly for a fast confirmation; otherwise leave PENDING and let the agent poll status.
+  let status = 'PENDING';
+  for (let i = 0; i < 5; i++) {
+    const c = await confirmPayment({ paymentId: payment.id, userId: input.userId });
+    if (c.ok) {
+      status = c.payment.status;
+      if (status === 'CONFIRMED' || status === 'FAILED') break;
+    }
+    await new Promise((r) => setTimeout(r, 2500));
+  }
+  return { ok: true, status, txHash: hash };
 }
 
 export async function recordBroadcast(input: {
