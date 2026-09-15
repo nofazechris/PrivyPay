@@ -19,24 +19,26 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
                 {"PrivyPay"}
               </span>
             </div>
-            <div style={{ "display": "flex", "gap": "20px", "marginLeft": "auto", "flexWrap": "wrap" }}>
-              <a href="#agent" style={{ "fontSize": "14px", "color": "#5B6472" }}>
-                {"Agent"}
-              </a>
-              <a href="#product" style={{ "fontSize": "14px", "color": "#5B6472" }}>
-                {"Usernames"}
-              </a>
-              <a href="#how" style={{ "fontSize": "14px", "color": "#5B6472" }}>
-                {"How it works"}
-              </a>
-              <a href="#connected" style={{ "fontSize": "14px", "color": "#5B6472" }}>
-                {"Connected"}
-              </a>
-              <a href="#security" style={{ "fontSize": "14px", "color": "#5B6472" }}>
-                {"Security"}
-              </a>
-            </div>
-            <button className="scp0 scp1" onClick={v.enterApp} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "10px 18px", "borderRadius": "11px", "cursor": "pointer", "transition": "background .16s ease,transform .16s ease" }}>
+            {v.isDesktop ? (
+              <div style={{ "display": "flex", "gap": "20px", "marginLeft": "auto", "flexWrap": "wrap" }}>
+                <a href="#agent" style={{ "fontSize": "14px", "color": "#5B6472" }}>
+                  {"Agent"}
+                </a>
+                <a href="#product" style={{ "fontSize": "14px", "color": "#5B6472" }}>
+                  {"Usernames"}
+                </a>
+                <a href="#how" style={{ "fontSize": "14px", "color": "#5B6472" }}>
+                  {"How it works"}
+                </a>
+                <a href="#connected" style={{ "fontSize": "14px", "color": "#5B6472" }}>
+                  {"Connected"}
+                </a>
+                <a href="#security" style={{ "fontSize": "14px", "color": "#5B6472" }}>
+                  {"Security"}
+                </a>
+              </div>
+            ) : null}
+            <button className="scp0 scp1" onClick={v.enterApp} style={{ "border": "none", "background": "#1B45D7", "color": "#fff", "fontSize": "14px", "fontWeight": "500", "padding": "10px 18px", "borderRadius": "11px", "cursor": "pointer", "transition": "background .16s ease,transform .16s ease", "marginLeft": v.isDesktop ? "0" : "auto" }}>
               {"Get started"}
             </button>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { color, radius, shadow } from '@/lib/design/tokens';
 
 export interface ModalProps {
@@ -70,23 +71,29 @@ export function Modal({ open, onClose, placement = 'center', title, ariaLabel, c
     };
   }, [open]);
 
-  if (!open) return null;
+  // Modals open on user interaction, so `open` is false on the first (server) render — no portal
+  // and no hydration mismatch. Guard on document for the SSR pass just in case.
+  if (!open || typeof document === 'undefined') return null;
 
   const centered = placement === 'center';
 
-  return (
+  // Rendered in a portal on document.body so the backdrop covers the whole viewport — including
+  // the sidebar/nav — and intercepts clicks, regardless of where the trigger lives in the layout
+  // (a transformed/positioned ancestor would otherwise clip a plain fixed element).
+  const overlay = (
     <div
       onClick={onClose}
       onKeyDown={onKeyDown}
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 60,
+        zIndex: 100,
         background: 'rgba(14,20,32,.36)',
         display: 'flex',
         alignItems: centered ? 'center' : 'flex-end',
         justifyContent: 'center',
-        padding: centered ? '24px' : '0 0 clamp(24px,9vh,84px)',
+        padding: centered ? 'clamp(16px,4vw,24px)' : '0 0 clamp(16px,9vh,84px)',
+        overflowY: 'auto',
         animation: 'pp-fade .18s ease both',
       }}
     >
@@ -101,11 +108,13 @@ export function Modal({ open, onClose, placement = 'center', title, ariaLabel, c
         style={{
           width: '100%',
           maxWidth,
+          maxHeight: centered ? 'calc(100dvh - 32px)' : '92dvh',
+          overflowY: 'auto',
           background: color.surface,
           border: `1px solid ${color.border}`,
           borderRadius: radius.card,
           boxShadow: shadow.card,
-          padding: '22px',
+          padding: 'clamp(18px,4vw,22px)',
           outline: 'none',
           animation: 'pp-sheet .22s cubic-bezier(.2,.8,.3,1) both',
         }}
@@ -119,4 +128,6 @@ export function Modal({ open, onClose, placement = 'center', title, ariaLabel, c
       </div>
     </div>
   );
+
+  return createPortal(overlay, document.body);
 }
