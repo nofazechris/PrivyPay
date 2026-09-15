@@ -1,9 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useWallets, toViemAccount } from '@privy-io/react-auth';
-import { createWalletClient, http } from 'viem';
-import { celo, celoSepolia } from 'viem/chains';
+import { useWallets, useSendTransaction } from '@privy-io/react-auth';
 import { useAuth } from './AuthProvider';
 
 /**
@@ -48,6 +46,7 @@ async function authedFetch(getToken: () => Promise<string | null>, url: string, 
 export function usePayment() {
   const { getAccessToken } = useAuth();
   const { wallets } = useWallets();
+  const { sendTransaction } = useSendTransaction();
   const [stage, setStage] = useState<PayStage>('idle');
 
   const pay = useCallback(
@@ -88,23 +87,23 @@ export function usePayment() {
             error: 'Your account wallet isn’t available to sign in this browser. Sign out and back in, then retry.',
           };
         }
-        const chain = prepared.chainId === celo.id ? celo : celoSepolia;
-
-        // Prepare + broadcast through our same-origin RPC proxy — the public forno endpoint
-        // 403s from the browser. viem's gas/nonce reads and the raw-tx broadcast all go here.
-        const rpcUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/api/rpc';
-
-        // Sign headlessly with viem over the Privy embedded wallet — no wallet modal (our
-        // "Confirm payment" step is the authorization surface). A standard EIP-1559 (type 2)
-        // transfer; gas is paid in native CELO. Gas-in-USDC needs Celo's CIP-64 type, which
-        // Privy's signer can't produce — that's the gasless-relayer follow-up (§14).
-        const account = await toViemAccount({ wallet: embedded });
-        const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) });
-        const txHash = await walletClient.sendTransaction({
-          to: prepared.to as `0x${string}`,
-          data: prepared.data as `0x${string}`,
-          value: BigInt(prepared.value || '0'),
-        });
+        // Sign + broadcast through Privy's own embedded-wallet API (§16). Privy populates gas,
+        // nonce and fees, signs in its TEE, and broadcasts server-side — so this avoids both the
+        // browser's forno 403 and viem's serialization mismatch with Privy's API, which rejects
+        // a raw {to,data,value} tx (it wants its own `calls` format). Gas is paid in native CELO;
+        // gas-in-USDC needs Celo's CIP-64 type, which Privy can't produce — that's the gasless-
+        // relayer follow-up (§14). `showWalletUIs: false` keeps it headless (our "Confirm payment"
+        // step is the sole authorization surface), and `address` pins the send to exactly the
+        // wallet policy authorized (§80), never a stray second embedded wallet.
+        const { hash: txHash } = await sendTransaction(
+          {
+            to: prepared.to,
+            data: prepared.data,
+            value: BigInt(prepared.value || '0'),
+            chainId: prepared.chainId,
+          },
+          { address: embedded.address, uiOptions: { showWalletUIs: false } },
+        );
         if (!txHash) return { status: 'failed', error: 'No transaction hash returned.' };
 
         await authedFetch(getAccessToken, `/api/payments/${paymentId}/broadcast`, {
@@ -141,7 +140,7 @@ export function usePayment() {
         return { status: 'failed', error: msg.length > 120 ? msg.slice(0, 117) + '…' : msg };
       }
     },
-    [getAccessToken, wallets],
+    [getAccessToken, wallets, sendTransaction],
   );
 
   return { pay, stage };
