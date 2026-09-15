@@ -718,9 +718,22 @@ export default function AppScreen({ v }: { v: Vals }) {
                         <button className="scp5" onClick={r.onToggle} style={{ "border": "1px solid #DCE0E7", "background": "#fff", "fontSize": "13.5px", "fontWeight": "500", "padding": "9px 15px", "borderRadius": "9px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
                           {r.action}
                         </button>
+                        <button className="scp5" onClick={r.onCancel} style={{ "border": "1px solid #DCE0E7", "background": "#fff", "color": "#B42318", "fontSize": "13.5px", "fontWeight": "500", "padding": "9px 15px", "borderRadius": "9px", "cursor": "pointer", "transition": "border-color .16s ease" }}>
+                          {"Cancel"}
+                        </button>
                       </div>
                     </Fragment>
                   ))}
+                  {v.noRecurring ? (
+                    <div style={{ "padding": "34px 20px", "textAlign": "center" }}>
+                      <div style={{ "fontSize": "14px", "fontWeight": "600" }}>
+                        {"No recurring payments"}
+                      </div>
+                      <div style={{ "fontSize": "13px", "color": "#5F6878", "marginTop": "5px" }}>
+                        {"Ask the agent, e.g. “Pay @chris $50 every Friday”."}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </>

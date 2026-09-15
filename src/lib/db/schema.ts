@@ -134,6 +134,30 @@ export const requests = pgTable('requests', {
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
 });
 
+export const recurringPayments = pgTable('recurring_payments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** Who set up (and pays) the recurring payment. */
+  ownerUserId: uuid('owner_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /** Who receives it. A real PrivyPay user, resolved at create time. */
+  payeeUserId: uuid('payee_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  amount: text('amount').notNull(),
+  token: text('token').notNull(),
+  chainId: integer('chain_id').notNull(),
+  /** Human cadence label, e.g. "Every Friday" / "Monthly". */
+  cadence: text('cadence').notNull(),
+  /** active | paused | cancelled. Automated execution is a later worker; this is the schedule. */
+  status: text('status').notNull().default('active'),
+  /** When the next run is due (computed from the cadence). */
+  nextRun: timestamp('next_run', { withTimezone: true }),
+  memo: text('memo'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const authorizations = pgTable('authorizations', {
   id: uuid('id').defaultRandom().primaryKey(),
   paymentId: uuid('payment_id')
@@ -160,3 +184,4 @@ export type PaymentRow = typeof payments.$inferSelect;
 export type AuthorizationRow = typeof authorizations.$inferSelect;
 export type ContactRow = typeof contacts.$inferSelect;
 export type RequestRecord = typeof requests.$inferSelect;
+export type RecurringRecord = typeof recurringPayments.$inferSelect;

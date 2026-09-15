@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useViewModel, type ViewModelHooks, type Contact, type AppRequest } from '@/lib/viewModel';
+import { useViewModel, type ViewModelHooks, type Contact, type AppRequest, type AppRecurring } from '@/lib/viewModel';
 import { useHeroBackground } from '@/lib/heroBackground';
 import { shortAddress, statusColor } from '@/lib/format';
 import { addressQr } from '@/lib/qr';
@@ -33,6 +33,8 @@ export interface AppIdentity {
   contacts?: { username: string; displayName: string | null }[];
   /** The user's real payment requests (both directions); replaces the demo request fixtures. */
   requests?: AppRequest[];
+  /** The user's real recurring payments; replaces the demo fixtures. */
+  recurring?: AppRecurring[];
 }
 
 /** Format a decimal balance string to 2 places for display, e.g. "0" → "0.00". */
@@ -129,7 +131,8 @@ export default function PrivyPay({
     [appIdentity],
   );
   const appRequests = useMemo(() => (appIdentity ? appIdentity.requests ?? [] : undefined), [appIdentity]);
-  const v = useViewModel(startView, hooks, appContacts, appRequests);
+  const appRecurring = useMemo(() => (appIdentity ? appIdentity.recurring ?? [] : undefined), [appIdentity]);
+  const v = useViewModel(startView, hooks, appContacts, appRequests, appRecurring);
   // The animated backdrop lives here rather than in the view model: it hands out DOM refs,
   // which are not view data.
   const heroRefs = useHeroBackground(v.isLanding, v.heroStage);
@@ -216,8 +219,8 @@ export default function PrivyPay({
         merged.cmdAnswerRows = rows.slice(0, 3).map((r) => ({ handle: r.handle, sub: r.sub, amount: r.amountStr, color: r.amountColor }));
       }
 
-      // contactRows / sendSuggestions / requestRows come from the view model's real lists; keep them.
-      merged.recurringRows = [];
+      // contactRows / sendSuggestions / requestRows / recurringRows come from the view model's
+      // real lists now; keep them.
     }
     return merged;
   }, [v, appIdentity, address, qr]);

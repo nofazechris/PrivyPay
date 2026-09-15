@@ -11,6 +11,7 @@ import { usePayment } from '@/components/auth/usePayment';
 import { useActivity } from '@/components/auth/useActivity';
 import { useContacts } from '@/components/auth/useContacts';
 import { useRequests } from '@/components/auth/useRequests';
+import { useRecurring } from '@/components/auth/useRecurring';
 import { AccountMenu } from '@/components/app/AccountMenu';
 import { Spinner, Text } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
@@ -34,6 +35,7 @@ export default function AppGate() {
   const { items: activity, refresh: refreshActivity } = useActivity();
   const { items: contacts, add: addContact } = useContacts();
   const { items: requests, create: createRequest, markPaid: markRequestPaid } = useRequests();
+  const { items: recurring, create: createRecurring, setPaused: setRecurringPaused, cancel: cancelRecurring } = useRecurring();
   const router = useRouter();
 
   // Real payment executor + contact/request management the agent card and screens drive.
@@ -62,8 +64,11 @@ export default function AppGate() {
         }
         return { ok: false as const, error: res.error ?? 'Payment failed.' };
       },
+      createRecurring: (args: { payee: string; amount: string; cadence?: string; memo?: string }) => createRecurring(args),
+      setRecurringPaused: (id: string, paused: boolean) => setRecurringPaused(id, paused),
+      cancelRecurring: (id: string) => cancelRecurring(id),
     }),
-    [pay, refreshBalance, refreshActivity, addContact, createRequest, markRequestPaid],
+    [pay, refreshBalance, refreshActivity, addContact, createRequest, markRequestPaid, createRecurring, setRecurringPaused, cancelRecurring],
   );
 
   useEffect(() => {
@@ -105,6 +110,7 @@ export default function AppGate() {
           activity,
           contacts,
           requests,
+          recurring,
         }}
         hooks={hooks}
       />

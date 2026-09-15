@@ -332,6 +332,12 @@ export interface ViewModelHooks {
   createRequest?: (args: { payer: string; amount: string; memo?: string }) => Promise<{ ok: boolean; error?: string }>;
   /** Pay a received request: real payment to the requester, then mark it settled. */
   payRequest?: (args: { requestId: string; recipient: string; amount: string }) => Promise<{ ok: boolean; error?: string }>;
+  /** Schedule a recurring payment to a @username. */
+  createRecurring?: (args: { payee: string; amount: string; cadence?: string; memo?: string }) => Promise<{ ok: boolean; error?: string }>;
+  /** Pause or resume a recurring payment. */
+  setRecurringPaused?: (id: string, paused: boolean) => Promise<{ ok: boolean; error?: string }>;
+  /** Cancel a recurring payment. */
+  cancelRecurring?: (id: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 /** A real payment request injected into the app view, replacing the demo request fixtures. */
@@ -345,11 +351,23 @@ export interface AppRequest {
   payable: boolean;
 }
 
+/** A real recurring payment injected into the app view, replacing the demo fixtures. */
+export interface AppRecurring {
+  id: string;
+  counterparty: string;
+  amount: string;
+  cadence: string;
+  next: string;
+  paused: boolean;
+  status: string;
+}
+
 export function useViewModel(
   startView: 'landing' | 'app' = 'landing',
   hooks: ViewModelHooks = {},
   contacts?: Contact[],
   appRequests?: AppRequest[],
+  appRecurring?: AppRecurring[],
 ) {
   const [s, setS] = useState<State>(() => initialState(startView));
 
@@ -464,9 +482,12 @@ export function useViewModel(
   const cmdConfirmWith = useCallback((it: Intent | null) => {
     if (!it) return;
     setState({ cmdStage: 'processing' });
+    const done = () => setState({ cmdStage: 'done', cmdFailed: false, cmdError: null });
+    const failed = (msg: string) => setState({ cmdStage: 'done', cmdFailed: true, cmdResult: { status: 'failed' }, cmdError: msg });
+    const handle = (it.handle ?? '').replace(/^@+/, '');
 
     // Real payment path: a send goes through the engine (preview → authorize → sign →
-    // broadcast → confirm). On failure we return to the preview so the user can retry.
+    // broadcast → confirm). The receipt shows the real outcome (Completed/Pending/Failed).
     if (it.kind === 'send' && hooksRef.current.executeSend) {
       hooksRef.current
         .executeSend({ recipient: it.handle ?? '', amount: String(it.amount ?? '') })
@@ -483,6 +504,22 @@ export function useViewModel(
             setState({ cmdStage: 'done', cmdFailed: true, cmdResult: { status: 'failed' }, cmdError: r.error ?? 'Payment could not be completed.' });
           }
         });
+      return;
+    }
+
+    // Real request: create it server-side (the list refreshes from the server).
+    if (it.kind === 'request' && hooksRef.current.createRequest) {
+      hooksRef.current
+        .createRequest({ payer: handle, amount: String(it.amount ?? ''), memo: it.note || undefined })
+        .then((r) => (r.ok ? done() : failed(r.error ?? 'Could not create request.')));
+      return;
+    }
+
+    // Real recurring: schedule it server-side.
+    if (it.kind === 'recurring' && hooksRef.current.createRecurring) {
+      hooksRef.current
+        .createRecurring({ payee: handle, amount: String(it.amount ?? ''), cadence: it.cadence })
+        .then((r) => (r.ok ? done() : failed(r.error ?? 'Could not schedule payment.')));
       return;
     }
 
@@ -585,6 +622,31 @@ export function useViewModel(
         balance: Math.max(0, st.balance - (parseFloat(row.payAmount) || 0)),
       }));
       flash('Payment sent to ' + row.handle);
+    },
+    [setState, flash],
+  );
+
+  const toggleRecurringWith = useCallback(
+    (row: { id: string | number; handle: string; paused: boolean }) => {
+      const label = row.paused ? 'Resumed ' + row.handle : 'Paused ' + row.handle;
+      if (hooksRef.current.setRecurringPaused) {
+        hooksRef.current.setRecurringPaused(String(row.id), !row.paused).then((r) => flash(r.ok ? label : r.error ?? 'Could not update.'));
+        return;
+      }
+      setState((st) => ({ recurring: st.recurring.map((x) => (x.id === row.id ? { ...x, paused: !x.paused } : x)) }));
+      flash(label);
+    },
+    [setState, flash],
+  );
+
+  const cancelRecurringWith = useCallback(
+    (row: { id: string | number; handle: string }) => {
+      if (hooksRef.current.cancelRecurring) {
+        hooksRef.current.cancelRecurring(String(row.id)).then((r) => flash(r.ok ? 'Cancelled ' + row.handle : r.error ?? 'Could not cancel.'));
+        return;
+      }
+      setState((st) => ({ recurring: st.recurring.filter((x) => x.id !== row.id) }));
+      flash('Cancelled ' + row.handle);
     },
     [setState, flash],
   );
@@ -832,6 +894,12 @@ export function useViewModel(
       : s.requests.map((r) => ({ ...r, payAmount: r.amount.replace(/,/g, '') }));
     const requestStatusColor = (label: string) =>
       label === 'Paid' ? '#167A54' : label === 'Cancelled' ? '#B42318' : '#B7791F';
+
+    // Recurring list: real schedules when signed in, else the demo fixtures.
+    const recurringSource: Array<{ id: string | number; handle: string; amount: string; cadence: string; next: string; paused: boolean }> =
+      appRecurring
+        ? appRecurring.map((r) => ({ id: r.id, handle: r.counterparty, amount: money(parseFloat(r.amount)), cadence: r.cadence, next: r.next, paused: r.paused }))
+        : s.recurring;
 
     return {
       isLanding: s.view === 'landing',
@@ -1109,17 +1177,16 @@ export function useViewModel(
       })),
       noRequests: requestSource.length === 0,
 
-      recurringRows: s.recurring.map((r) => ({
+      recurringRows: recurringSource.map((r) => ({
         ...r,
         statusLabel: r.paused ? 'Paused' : 'Active',
         statusColor: r.paused ? '#8A6A1E' : '#167A54',
         statusDot: r.paused ? '#D8A93A' : '#167A54',
         action: r.paused ? 'Resume' : 'Pause',
-        onToggle: () => {
-          setState((st) => ({ recurring: st.recurring.map((x) => (x.id === r.id ? { ...x, paused: !x.paused } : x)) }));
-          flash(r.paused ? 'Resumed ' + r.handle : 'Paused ' + r.handle);
-        },
+        onToggle: () => toggleRecurringWith(r),
+        onCancel: () => cancelRecurringWith(r),
       })),
+      noRecurring: recurringSource.length === 0,
 
       serviceRows: SERVICES.map(([k, name, desc, markBg, markBorder]) => {
         const on = !!s.connections[k];
@@ -1250,7 +1317,7 @@ export function useViewModel(
       toastShown: !!s.toast,
       toastText: s.toast || '',
     };
-  }, [s, contactsList, canAddContact, appRequests, setState, later, flash, nav, runCmdWith, cmdReset, cmdConfirmWith, addContactWith, createRequestWith, payRequestWith, startSetupWith, sendNextWith, startHero, heroConfirm]);
+  }, [s, contactsList, canAddContact, appRequests, appRecurring, setState, later, flash, nav, runCmdWith, cmdReset, cmdConfirmWith, addContactWith, createRequestWith, payRequestWith, toggleRecurringWith, cancelRecurringWith, startSetupWith, sendNextWith, startHero, heroConfirm]);
 }
 
 export type Vals = ReturnType<typeof useViewModel>;
