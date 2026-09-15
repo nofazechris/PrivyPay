@@ -60,7 +60,7 @@ const SERVICES: Service[] = [
 
 const MCP_TOOLS: Array<[string, string]> = [
   ['get_profile', 'Read'], ['get_balance', 'Read'], ['find_contact', 'Read'], ['get_recent_transactions', 'Read'],
-  ['get_payment_status', 'Read'], ['send_payment', 'Needs confirmation'], ['request_payment', 'Needs confirmation'], ['create_recurring_payment', 'Needs confirmation'],
+  ['get_payment_status', 'Read'], ['create_payment_preview', 'Prepares'], ['confirm_payment', 'Needs approval'], ['create_request', 'Creates request'],
 ];
 
 const PRIVACY_ROWS: Array<[string, string, string]> = [

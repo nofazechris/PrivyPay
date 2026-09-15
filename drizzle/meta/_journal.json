@@ -43,6 +43,13 @@
       "when": 1789453157049,
       "tag": "0005_broken_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789455434135,
+      "tag": "0006_tough_jubilee",
+      "breakpoints": true
     }
   ]
 }

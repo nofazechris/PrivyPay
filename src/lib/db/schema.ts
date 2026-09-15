@@ -158,6 +158,27 @@ export const recurringPayments = pgTable('recurring_payments', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const mcpTokens = pgTable(
+  'mcp_tokens',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** SHA-256 of the bearer token — the plaintext is shown once at mint time and never stored. */
+    tokenHash: text('token_hash').notNull(),
+    /** A short, non-secret prefix (e.g. "pk_live_ab12") for display/identification in the UI. */
+    tokenPrefix: text('token_prefix').notNull(),
+    /** User-facing label, e.g. "ChatGPT" / "Claude". */
+    label: text('label'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  // The hash is what we look up on every MCP call; unique so a token maps to exactly one row.
+  (t) => [uniqueIndex('mcp_tokens_hash_uq').on(t.tokenHash)],
+);
+
 export const authorizations = pgTable('authorizations', {
   id: uuid('id').defaultRandom().primaryKey(),
   paymentId: uuid('payment_id')
@@ -185,3 +206,4 @@ export type AuthorizationRow = typeof authorizations.$inferSelect;
 export type ContactRow = typeof contacts.$inferSelect;
 export type RequestRecord = typeof requests.$inferSelect;
 export type RecurringRecord = typeof recurringPayments.$inferSelect;
+export type McpTokenRow = typeof mcpTokens.$inferSelect;

@@ -16,6 +16,8 @@ const schema = z.object({
   // Runtime
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   APP_ENV: z.enum(['local', 'development', 'staging', 'production']).default('local'),
+  /** Public origin for metadata and integration hand-off links (e.g. https://privypay.app). */
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 
   // Database (Stage: Foundation / §33)
   DATABASE_URL: z.string().url().optional(),

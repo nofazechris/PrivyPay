@@ -2,6 +2,7 @@
 // Regenerate with: npm run design:build
 import { Fragment } from 'react';
 import type { Vals } from '@/lib/viewModel';
+import { McpTokens } from '@/components/app/McpTokens';
 import {
   OverviewIcon,
   PaymentsIcon,
@@ -874,6 +875,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                     ))}
                   </div>
                 </div>
+                <McpTokens />
                 <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "22px", "marginTop": "16px" }}>
                   <div style={{ "fontSize": "15px", "fontWeight": "600" }}>
                     {"How connected services work"}
