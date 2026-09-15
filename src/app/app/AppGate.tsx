@@ -27,7 +27,7 @@ import { color } from '@/lib/design/tokens';
  * (Data shown here is still the in-memory demo until Stages 6–13 wire real balances.)
  */
 export default function AppGate() {
-  const { configured, ready, authenticated, logout } = useAuth();
+  const { configured, ready, authenticated, logout, getAccessToken } = useAuth();
   const { loading: profileLoading, profile, wallet, unavailable } = useProfile();
   const { address: walletAddress } = useWallet();
   const { balance, refresh: refreshBalance } = useBalance(walletAddress ?? wallet?.address ?? null);
@@ -67,8 +67,52 @@ export default function AppGate() {
       createRecurring: (args: { payee: string; amount: string; cadence?: string; memo?: string }) => createRecurring(args),
       setRecurringPaused: (id: string, paused: boolean) => setRecurringPaused(id, paused),
       cancelRecurring: (id: string) => cancelRecurring(id),
+      // Real AI: the server LLM turns the message into a validated intent; we map it to the
+      // agent card's command shape. Returns null on failure so the card degrades gracefully.
+      parseCommand: async (message: string) => {
+        try {
+          const token = await getAccessToken();
+          const res = await fetch('/api/agent/command', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ message }),
+          });
+          if (!res.ok) return null;
+          const data = (await res.json()) as {
+            intent?: { type?: string; parameters?: Record<string, unknown> };
+            recipient?: { handle?: string } | null;
+          };
+          const it = data.intent;
+          if (!it?.type) return null;
+          const p = it.parameters ?? {};
+          const amountStr = typeof p.amount === 'string' ? p.amount : undefined;
+          const amount = amountStr ? parseFloat(amountStr) : undefined;
+          const rawRecipient = typeof p.recipient === 'string' ? p.recipient : undefined;
+          const handle = rawRecipient
+            ? rawRecipient.startsWith('@')
+              ? rawRecipient
+              : '@' + rawRecipient
+            : (data.recipient?.handle ?? undefined);
+          const recurring = typeof p.recurring === 'string' ? p.recurring : undefined;
+          const memo = typeof p.memo === 'string' ? p.memo : undefined;
+          switch (it.type) {
+            case 'SEND_PAYMENT':
+              return recurring ? { kind: 'recurring' as const, amount, handle, cadence: recurring } : { kind: 'send' as const, amount, handle };
+            case 'REQUEST_PAYMENT':
+              return { kind: 'request' as const, amount, handle, note: memo };
+            case 'GET_BALANCE':
+              return { kind: 'balance' as const };
+            case 'GET_TRANSACTIONS':
+              return { kind: 'activity' as const };
+            default:
+              return { kind: 'unknown' as const };
+          }
+        } catch {
+          return null;
+        }
+      },
     }),
-    [pay, refreshBalance, refreshActivity, addContact, createRequest, markRequestPaid, createRecurring, setRecurringPaused, cancelRecurring],
+    [pay, refreshBalance, refreshActivity, addContact, createRequest, markRequestPaid, createRecurring, setRecurringPaused, cancelRecurring, getAccessToken],
   );
 
   useEffect(() => {

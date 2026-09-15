@@ -338,6 +338,18 @@ export interface ViewModelHooks {
   setRecurringPaused?: (id: string, paused: boolean) => Promise<{ ok: boolean; error?: string }>;
   /** Cancel a recurring payment. */
   cancelRecurring?: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  /**
+   * Turn a natural-language message into a structured command via the real AI agent (server LLM,
+   * `/api/agent/command`). Returns null on failure so the card can show a graceful answer. When
+   * absent (the marketing landing), the view model falls back to its local demo parser.
+   */
+  parseCommand?: (message: string) => Promise<{
+    kind: 'send' | 'request' | 'recurring' | 'balance' | 'activity' | 'unknown';
+    amount?: number;
+    handle?: string;
+    note?: string;
+    cadence?: string;
+  } | null>;
 }
 
 /** A real payment request injected into the app view, replacing the demo request fixtures. */
@@ -461,20 +473,39 @@ export function useViewModel(
 
   const runCmdWith = useCallback(
     (raw: string) => {
-      const intent = parseCmd(raw);
-      if (!intent) return;
+      if (!raw.trim()) return;
       cmdTimers.current.forEach(clearTimeout);
       cmdTimers.current = [];
       const at = (fn: () => void, ms: number) => cmdTimers.current.push(setTimeout(fn, ms));
-      // A payment intent with no @username can't proceed — ask who to pay instead of guessing.
-      const needsRecipient = (intent.kind === 'send' || intent.kind === 'request' || intent.kind === 'recurring') && !intent.handle;
-      setState({ cmdInput: raw, cmdIntent: intent, cmdStage: 'thinking', cmdPrompt: needsRecipient ? 'recipient' : null });
-      if (needsRecipient || intent.kind === 'balance' || intent.kind === 'activity' || intent.kind === 'unknown') {
-        at(() => setState({ cmdStage: 'answer' }), 850);
+
+      // Drive the card stages from a parsed intent (shared by the AI and demo paths).
+      const drive = (intent: Intent) => {
+        // A payment intent with no @username can't proceed — ask who to pay instead of guessing.
+        const needsRecipient = (intent.kind === 'send' || intent.kind === 'request' || intent.kind === 'recurring') && !intent.handle;
+        setState({ cmdIntent: intent, cmdPrompt: needsRecipient ? 'recipient' : null });
+        if (needsRecipient || intent.kind === 'balance' || intent.kind === 'activity' || intent.kind === 'unknown') {
+          at(() => setState({ cmdStage: 'answer' }), 300);
+          return;
+        }
+        at(() => setState({ cmdStage: 'resolving' }), 200);
+        at(() => setState({ cmdStage: 'preview' }), 900);
+      };
+
+      setState({ cmdInput: raw, cmdStage: 'thinking', cmdIntent: null, cmdPrompt: null });
+
+      // Real AI path: the server LLM extracts a validated structured intent. The awaited call is
+      // the genuine "thinking" moment; a failure degrades to a graceful answer.
+      if (hooksRef.current.parseCommand) {
+        hooksRef.current
+          .parseCommand(raw)
+          .then((intent) => drive((intent ?? { kind: 'unknown' }) as Intent))
+          .catch(() => drive({ kind: 'unknown' }));
         return;
       }
-      at(() => setState({ cmdStage: 'resolving' }), 700);
-      at(() => setState({ cmdStage: 'preview' }), 1650);
+
+      // Demo fallback (marketing landing): local regex parser.
+      const parsed = parseCmd(raw);
+      if (parsed) drive(parsed);
     },
     [setState],
   );
