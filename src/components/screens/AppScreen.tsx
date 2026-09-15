@@ -2,7 +2,6 @@
 // Regenerate with: npm run design:build
 import { Fragment } from 'react';
 import type { Vals } from '@/lib/viewModel';
-import { McpTokens } from '@/components/app/McpTokens';
 import { AgentPayments } from '@/components/app/AgentPayments';
 import { ServiceConnect } from '@/components/app/ServiceConnect';
 import {
@@ -833,9 +832,6 @@ export default function AppScreen({ v }: { v: Vals }) {
                       </Fragment>
                     ))}
                   </div>
-                </div>
-                <div id="pp-connect-agent" style={{ "scrollMarginTop": "16px" }}>
-                  <McpTokens />
                 </div>
                 <AgentPayments />
                 <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "16px", "padding": "22px", "marginTop": "16px" }}>

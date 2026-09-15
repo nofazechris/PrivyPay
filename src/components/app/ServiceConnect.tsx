@@ -132,12 +132,14 @@ function ConnectModal({
   connected,
   mint,
   poll,
+  onDisconnect,
 }: {
   svc: Svc;
   onClose: () => void;
   connected: boolean;
   mint: (label: string) => Promise<{ ok: boolean; token?: string; error?: string }>;
   poll: () => void;
+  onDisconnect: () => Promise<void>;
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -200,12 +202,26 @@ function ConnectModal({
             <div style={{ marginTop: '5px', fontSize: '13px', color: color.muted }}>
               You can now ask {svc.name} to check balances, request, and pay — you confirm every payment.
             </div>
-            <button
-              onClick={onClose}
-              style={{ marginTop: '16px', border: 'none', background: color.primary, color: '#fff', fontSize: '14px', fontWeight: 500, padding: '11px 20px', borderRadius: '10px', cursor: 'pointer' }}
-            >
-              Done
-            </button>
+            <div style={{ display: 'flex', gap: '9px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
+              <button
+                onClick={onClose}
+                style={{ border: 'none', background: color.primary, color: '#fff', fontSize: '14px', fontWeight: 500, padding: '11px 20px', borderRadius: '10px', cursor: 'pointer' }}
+              >
+                Done
+              </button>
+              <button
+                onClick={async () => {
+                  setBusy(true);
+                  await onDisconnect();
+                  setBusy(false);
+                  onClose();
+                }}
+                disabled={busy}
+                style={{ border: `1px solid ${color.borderStrong}`, background: color.surface, color: color.danger, fontSize: '14px', fontWeight: 500, padding: '11px 18px', borderRadius: '10px', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}
+              >
+                {busy ? 'Disconnecting…' : 'Disconnect'}
+              </button>
+            </div>
           </div>
         ) : !token ? (
           <>
@@ -247,7 +263,7 @@ function ConnectModal({
 }
 
 export function ServiceConnect() {
-  const { tokens, mint, refresh } = useMcpTokens();
+  const { tokens, mint, refresh, revoke } = useMcpTokens();
   const [open, setOpen] = useState<Svc | null>(null);
 
   // A service is "connected" once a token labeled with its name has actually been used.
@@ -256,6 +272,13 @@ export function ServiceConnect() {
     for (const t of tokens) if (t.label && t.lastUsedAt) m.add(t.label.toLowerCase());
     return m;
   }, [tokens]);
+
+  // Disconnect a service by revoking every key issued for it.
+  const revokeService = async (name: string) => {
+    const mine = tokens.filter((t) => (t.label ?? '').toLowerCase() === name.toLowerCase());
+    for (const t of mine) await revoke(t.id);
+    refresh();
+  };
 
   return (
     <>
@@ -304,7 +327,16 @@ export function ServiceConnect() {
           );
         })}
       </div>
-      {open ? <ConnectModal svc={open} onClose={() => setOpen(null)} connected={connectedByName.has(open.name.toLowerCase())} mint={mint} poll={refresh} /> : null}
+      {open ? (
+        <ConnectModal
+          svc={open}
+          onClose={() => setOpen(null)}
+          connected={connectedByName.has(open.name.toLowerCase())}
+          mint={mint}
+          poll={refresh}
+          onDisconnect={() => revokeService(open.name)}
+        />
+      ) : null}
     </>
   );
 }
