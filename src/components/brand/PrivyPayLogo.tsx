@@ -10,9 +10,9 @@ import type { CSSProperties } from 'react';
 
 // The three strokes, drawn on a 48×48 canvas. Order = draw order (stem → upper bowl → lower bowl).
 const STROKES = [
-  'M19 8 C 16.5 20, 15.5 33, 15 44', // stem — one confident, slightly tapering motion
-  'M20 8.5 C 31 6.5, 40 11, 40 18.5', // upper bowl arc
-  'M39.5 27.5 C 39 35, 30 37.5, 21 34.5', // lower bowl arc — clear gap above it, open counter to the stem
+  'M18.5 8 C 17.2 20, 16.7 32, 16.5 44', // stem — one confident, near-upright motion
+  'M19.5 8.5 C 30 6.6, 38.5 11, 38.5 18.5', // upper bowl arc
+  'M38 27 C 37.5 34.5, 29.5 37, 20.5 34.5', // lower bowl arc — clear gap above it, open counter to the stem
 ] as const;
 
 export type LogoSize = 'sm' | 'md' | 'lg';
