@@ -5,6 +5,7 @@ import type { Vals } from '@/lib/viewModel';
 import { Modal } from '@/components/ui/Modal';
 import { AgentPayments } from '@/components/app/AgentPayments';
 import { ServiceConnect } from '@/components/app/ServiceConnect';
+import { PrivyPayLogo } from '@/components/brand/PrivyPayLogo';
 import {
   OverviewIcon,
   PaymentsIcon,
@@ -45,7 +46,7 @@ export default function AppScreen({ v }: { v: Vals }) {
           <>
             <div style={{ "width": "238px", "flex": "none", "borderRight": "1px solid #E8EAEF", "background": "#FBFBFC", "padding": "20px 14px", "display": "flex", "flexDirection": "column", "position": "sticky", "top": "0", "height": "100vh", "overflow": "auto" }}>
               <div onClick={v.goLanding} style={{ "display": "flex", "alignItems": "center", "gap": "9px", "padding": "0 8px 16px", "cursor": "pointer" }}>
-                <div style={{ "width": "20px", "height": "20px", "borderRadius": "6px", "background": "#1B45D7" }}></div>
+                <PrivyPayLogo size={24} />
                 <span style={{ "fontSize": "15px", "fontWeight": "600", "letterSpacing": "-.02em" }}>
                   {"PrivyPay"}
                 </span>
@@ -120,7 +121,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                 <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "18px", "padding": "clamp(18px,2.4vw,24px)", "boxShadow": "0 28px 56px -42px rgba(14,20,32,.32)" }}>
                   <div style={{ "display": "flex", "alignItems": "center", "justifyContent": "space-between", "gap": "12px", "flexWrap": "wrap" }}>
                     <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
-                      <div style={{ "width": "22px", "height": "22px", "borderRadius": "7px", "background": "#1B45D7" }}></div>
+                      <PrivyPayLogo size={26} />
                       <span style={{ "fontSize": "14.5px", "fontWeight": "600", "letterSpacing": "-.015em" }}>
                         {"PrivyPay agent"}
                       </span>

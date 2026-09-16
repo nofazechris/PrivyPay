@@ -6,6 +6,7 @@
 import { Fragment } from 'react';
 import type { Vals } from '@/lib/viewModel';
 import type { HeroRefs } from '@/lib/heroBackground';
+import { PrivyPayLogo } from '@/components/brand/PrivyPayLogo';
 
 export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) {
   return (
@@ -14,7 +15,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
         <div style={{ "position": "sticky", "top": "0", "zIndex": "40", "background": "rgba(246,247,249,.88)", "backdropFilter": "blur(10px)", "borderBottom": "1px solid #E8EAEF" }}>
           <div style={{ "maxWidth": "1160px", "margin": "0 auto", "padding": "14px 24px", "display": "flex", "alignItems": "center", "gap": "26px" }}>
             <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
-              <div style={{ "width": "20px", "height": "20px", "borderRadius": "6px", "background": "#1B45D7" }}></div>
+              <PrivyPayLogo size={26} animated />
               <span style={{ "fontSize": "16px", "fontWeight": "600", "letterSpacing": "-.02em" }}>
                 {"PrivyPay"}
               </span>
@@ -97,7 +98,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
               <div style={{ "position": "relative", "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "18px", "padding": "20px", "boxShadow": "0 30px 60px -38px rgba(14,20,32,.34)" }}>
                 <div style={{ "display": "flex", "alignItems": "center", "justifyContent": "space-between", "gap": "12px", "flexWrap": "wrap" }}>
                   <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
-                    <div style={{ "width": "22px", "height": "22px", "borderRadius": "7px", "background": "#1B45D7" }}></div>
+                    <PrivyPayLogo size={26} />
                     <span style={{ "fontSize": "14.5px", "fontWeight": "600", "letterSpacing": "-.015em" }}>
                       {"PrivyPay"}
                     </span>
@@ -307,7 +308,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
               <div style={{ "background": "#fff", "border": "1px solid #E4E7EC", "borderRadius": "18px", "padding": "clamp(18px,2.4vw,24px)", "boxShadow": "0 28px 56px -42px rgba(14,20,32,.32)" }}>
                 <div style={{ "display": "flex", "alignItems": "center", "justifyContent": "space-between", "gap": "12px", "flexWrap": "wrap" }}>
                   <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
-                    <div style={{ "width": "22px", "height": "22px", "borderRadius": "7px", "background": "#1B45D7" }}></div>
+                    <PrivyPayLogo size={26} />
                     <span style={{ "fontSize": "14.5px", "fontWeight": "600", "letterSpacing": "-.015em" }}>
                       {"PrivyPay agent"}
                     </span>
@@ -1144,7 +1145,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
           <div style={{ "maxWidth": "1160px", "margin": "0 auto", "padding": "30px 24px 46px", "display": "flex", "gap": "26px", "flexWrap": "wrap", "alignItems": "flex-start" }}>
             <div style={{ "minWidth": "220px" }}>
               <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
-                <div style={{ "width": "18px", "height": "18px", "borderRadius": "6px", "background": "#1B45D7" }}></div>
+                <PrivyPayLogo size={22} />
                 <span style={{ "fontSize": "15px", "fontWeight": "600", "letterSpacing": "-.02em" }}>
                   {"PrivyPay"}
                 </span>

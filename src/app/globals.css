@@ -80,3 +80,11 @@
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+/* Logo entrance (§ brand): the three strokes settle in sequence (per-stroke delay set inline).
+   Fill-safe under the reduced-motion guard in design.css — with the animation off, strokes keep
+   their normal opacity and stay visible. */
+@keyframes pp-logo-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}

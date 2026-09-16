@@ -1,6 +1,7 @@
 // AUTO-GENERATED from "PrivyPay v3.dc.html" — do not edit by hand.
 // Regenerate with: npm run design:build
 import type { Vals } from '@/lib/viewModel';
+import { PrivyPayLogo } from '@/components/brand/PrivyPayLogo';
 
 export default function AuthScreen({ v }: { v: Vals }) {
   return (
@@ -8,7 +9,7 @@ export default function AuthScreen({ v }: { v: Vals }) {
       <div data-screen-label="Sign up" style={{ "minHeight": "100vh", "display": "flex", "alignItems": "center", "justifyContent": "center", "padding": "32px 20px" }}>
         <div style={{ "width": "100%", "maxWidth": "400px", "animation": "pp-up .4s cubic-bezier(.2,.8,.3,1) both" }}>
           <div onClick={v.goLanding} style={{ "display": "flex", "alignItems": "center", "gap": "9px", "cursor": "pointer" }}>
-            <div style={{ "width": "20px", "height": "20px", "borderRadius": "6px", "background": "#1B45D7" }}></div>
+            <PrivyPayLogo size={24} />
             <span style={{ "fontSize": "15px", "fontWeight": "600", "letterSpacing": "-.02em" }}>
               {"PrivyPay"}
             </span>

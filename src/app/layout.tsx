@@ -33,6 +33,13 @@ export const metadata: Metadata = {
   description,
   // The marketing page is meant to be indexed; the /styleguide route opts out on its own.
   robots: { index: true, follow: true },
+  // The standalone P mark. SVG preferred (crisp, theme-agnostic); .ico as a fallback.
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+  },
   openGraph: {
     type: "website",
     siteName: "PrivyPay",
