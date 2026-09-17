@@ -8,11 +8,15 @@ import type { CSSProperties } from 'react';
  * circle or container — the P itself is the identity (§ brand).
  */
 
-// The three strokes, drawn on a 48×48 canvas. Order = draw order (stem → upper bowl → lower bowl).
+// The canonical Pexa mark — three strokes on the design's viewBox (8 3.4 20.4 25.8).
+// Order = draw order (stem → upper bowl → lower bowl).
+const VIEWBOX = '8 3.4 20.4 25.8';
+const ASPECT = 20.4 / 25.8; // width / height — the P is taller than wide
+const STROKE_WIDTH = 3.4;
 const STROKES = [
-  'M18.5 8 C 17.2 20, 16.7 32, 16.5 44', // stem — one confident, near-upright motion
-  'M19.5 8.5 C 30 6.6, 38.5 11, 38.5 18.5', // upper bowl arc
-  'M38 27 C 37.5 34.5, 29.5 37, 20.5 34.5', // lower bowl arc — clear gap above it, open counter to the stem
+  'M12.4 5C12.2 12 11.4 19.6 9.6 27.6', // stem
+  'M16.8 5.5C22.2 4.7 26.8 6.9 26.5 10.2', // upper bowl arc
+  'M25.9 14.6C25.3 17.6 21.2 19 16 18.3', // lower bowl arc
 ] as const;
 
 export type LogoSize = 'sm' | 'md' | 'lg';
@@ -40,21 +44,20 @@ export interface PrivyPayLogoProps {
 }
 
 export function PrivyPayLogo({ size = 'md', variant = 'light', animated = false, title, className, style }: PrivyPayLogoProps) {
-  const px = typeof size === 'number' ? size : SIZE_PX[size];
+  const height = typeof size === 'number' ? size : SIZE_PX[size];
+  const width = Math.round(height * ASPECT * 100) / 100;
   const color = VARIANT_COLOR[variant];
   const decorative = !title;
-  // Stroke weight tuned so the deliberate gaps stay legible at every size.
-  const strokeWidth = 5.5;
 
   return (
     <svg
-      width={px}
-      height={px}
-      viewBox="0 0 48 48"
+      width={width}
+      height={height}
+      viewBox={VIEWBOX}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={{ color, display: 'block', flex: 'none', ...style }}
+      style={{ color, display: 'block', flex: 'none', overflow: 'visible', ...style }}
       role={decorative ? undefined : 'img'}
       aria-hidden={decorative ? true : undefined}
       aria-label={title}
@@ -65,7 +68,7 @@ export function PrivyPayLogo({ size = 'md', variant = 'light', animated = false,
           key={i}
           d={d}
           stroke="currentColor"
-          strokeWidth={strokeWidth}
+          strokeWidth={STROKE_WIDTH}
           strokeLinecap="round"
           strokeLinejoin="round"
           style={animated ? { animation: 'pp-logo-in 620ms cubic-bezier(.2,.8,.3,1) both', animationDelay: `${i * 140}ms` } : undefined}

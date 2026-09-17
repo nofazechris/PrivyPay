@@ -170,7 +170,7 @@ export default function PrivyPay({
       const flashShare = v.shareReceive;
       merged.shareReceive = () => {
         if (typeof navigator !== 'undefined' && navigator.share) {
-          navigator.share({ title: 'My PrivyPay address', text: address }).catch(() => {});
+          navigator.share({ title: 'My Pexa address', text: address }).catch(() => {});
         } else {
           navigator.clipboard?.writeText(address).catch(() => {});
         }

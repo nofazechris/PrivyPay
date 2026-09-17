@@ -11,11 +11,11 @@ export default function AuthScreen({ v }: { v: Vals }) {
           <div onClick={v.goLanding} style={{ "display": "flex", "alignItems": "center", "gap": "9px", "cursor": "pointer" }}>
             <PrivyPayLogo size={24} />
             <span style={{ "fontSize": "15px", "fontWeight": "600", "letterSpacing": "-.02em" }}>
-              {"PrivyPay"}
+              {"Pexa"}
             </span>
           </div>
           <h1 style={{ "fontSize": "27px", "letterSpacing": "-.03em", "fontWeight": "600", "margin": "26px 0 0" }}>
-            {"Sign in to PrivyPay"}
+            {"Sign in to Pexa"}
           </h1>
           <p style={{ "fontSize": "15px", "color": "#5B6472", "lineHeight": "1.6", "margin": "10px 0 24px" }}>
             {v.authSub}

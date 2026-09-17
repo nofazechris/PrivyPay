@@ -22,13 +22,13 @@ const geistMono = Geist_Mono({
 // string rather than undefined — still falls back instead of producing `new URL('')`.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-const title = "PrivyPay — Your payment agent, wherever you work";
+const title = "Pexa — Your payment agent, wherever you work";
 const description =
   "Send, request and manage stablecoin payments through a single intelligent payment layer connected to the tools you already use. Built on Celo.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  applicationName: "PrivyPay",
+  applicationName: "Pexa",
   title,
   description,
   // The marketing page is meant to be indexed; the /styleguide route opts out on its own.
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "PrivyPay",
+    siteName: "Pexa",
     title,
     description,
     url: siteUrl,

@@ -32,5 +32,6 @@ export {
   LinkSimple as LinkIcon,
   SlidersHorizontal as SettingsNavIcon,
   DotsThreeOutline as MoreIcon,
+  ChatCircle as ChatIcon,
   type Icon,
 } from '@phosphor-icons/react';

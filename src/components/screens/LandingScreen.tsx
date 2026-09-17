@@ -17,7 +17,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
             <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
               <PrivyPayLogo size={26} animated />
               <span style={{ "fontSize": "16px", "fontWeight": "600", "letterSpacing": "-.02em" }}>
-                {"PrivyPay"}
+                {"Pexa"}
               </span>
             </div>
             {v.isDesktop ? (
@@ -100,7 +100,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
                   <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
                     <PrivyPayLogo size={26} />
                     <span style={{ "fontSize": "14.5px", "fontWeight": "600", "letterSpacing": "-.015em" }}>
-                      {"PrivyPay"}
+                      {"Pexa"}
                     </span>
                     <span style={{ "fontFamily": "var(--font-geist-mono),monospace", "fontSize": "10.5px", "letterSpacing": ".14em", "color": "#6C7484" }}>
                       {"AGENT"}
@@ -310,7 +310,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
                   <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
                     <PrivyPayLogo size={26} />
                     <span style={{ "fontSize": "14.5px", "fontWeight": "600", "letterSpacing": "-.015em" }}>
-                      {"PrivyPay agent"}
+                      {"Pexa agent"}
                     </span>
                   </div>
                   <div style={{ "display": "flex", "alignItems": "center", "gap": "7px", "border": "1px solid #DDE3F6", "background": "#F4F6FE", "borderRadius": "999px", "padding": "5px 11px" }}>
@@ -992,7 +992,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
               <div style={{ "display": "flex", "alignItems": "center", "justifyContent": "center", "gap": "8px" }}>
                 <span style={{ "width": "6px", "height": "6px", "borderRadius": "50%", "background": "#1B45D7", "display": "inline-block", "animation": "pp-pulse 2s ease-in-out infinite" }}></span>
                 <div style={{ "fontSize": "15.5px", "fontWeight": "600", "letterSpacing": "-.018em", "color": "#153AB4" }}>
-                  {"PrivyPay agent · cloud"}
+                  {"Pexa agent · cloud"}
                 </div>
               </div>
               <div style={{ "fontSize": "13px", "color": "#5B6472", "marginTop": "7px", "maxWidth": "430px", "marginLeft": "auto", "marginRight": "auto", "lineHeight": "1.6" }}>
@@ -1147,7 +1147,7 @@ export default function LandingScreen({ v, refs }: { v: Vals; refs: HeroRefs }) 
               <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
                 <PrivyPayLogo size={22} />
                 <span style={{ "fontSize": "15px", "fontWeight": "600", "letterSpacing": "-.02em" }}>
-                  {"PrivyPay"}
+                  {"Pexa"}
                 </span>
               </div>
               <div style={{ "fontSize": "13.5px", "color": "#5F6878", "marginTop": "8px" }}>

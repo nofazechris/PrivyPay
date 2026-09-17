@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import PrivyPay from '@/components/PrivyPay';
+import { PexaApp } from '@/components/pexa/PexaApp';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useProfile } from '@/components/auth/useProfile';
 import { useWallet } from '@/components/auth/useWallet';
@@ -12,7 +12,6 @@ import { useActivity } from '@/components/auth/useActivity';
 import { useContacts } from '@/components/auth/useContacts';
 import { useRequests } from '@/components/auth/useRequests';
 import { useRecurring } from '@/components/auth/useRecurring';
-import { AccountMenu } from '@/components/app/AccountMenu';
 import { Spinner, Text } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
 
@@ -33,9 +32,9 @@ export default function AppGate() {
   const { balance, refresh: refreshBalance } = useBalance(walletAddress ?? wallet?.address ?? null);
   const { pay } = usePayment();
   const { items: activity, refresh: refreshActivity } = useActivity();
-  const { items: contacts, add: addContact } = useContacts();
-  const { items: requests, create: createRequest, markPaid: markRequestPaid } = useRequests();
-  const { items: recurring, create: createRecurring, setPaused: setRecurringPaused, cancel: cancelRecurring } = useRecurring();
+  const { add: addContact } = useContacts();
+  const { create: createRequest, markPaid: markRequestPaid } = useRequests();
+  const { create: createRecurring, setPaused: setRecurringPaused, cancel: cancelRecurring } = useRecurring();
   const router = useRouter();
 
   // Real payment executor + contact/request management the agent card and screens drive.
@@ -144,21 +143,16 @@ export default function AppGate() {
   }
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh' }}>
-      <PrivyPay
-        startView="app"
-        appIdentity={{
-          username: profile?.username,
-          walletAddress: walletAddress ?? wallet?.address,
-          balance: balance ?? undefined,
-          activity,
-          contacts,
-          requests,
-          recurring,
-        }}
-        hooks={hooks}
-      />
-      <AccountMenu username={profile?.username} address={walletAddress ?? wallet?.address} onSignOut={() => logout()} />
-    </div>
+    <PexaApp
+      username={profile?.username}
+      address={walletAddress ?? wallet?.address}
+      balance={balance ?? '0'}
+      activity={activity}
+      onSignOut={() => logout()}
+      parseCommand={hooks.parseCommand}
+      executeSend={hooks.executeSend}
+      createRequest={hooks.createRequest}
+      createRecurring={hooks.createRecurring}
+    />
   );
 }

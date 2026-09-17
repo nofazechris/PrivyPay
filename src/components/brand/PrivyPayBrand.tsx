@@ -45,7 +45,7 @@ export function PrivyPayBrand({
           aria-hidden={title ? true : undefined}
           style={{ fontSize: `${WORDMARK_SIZE[size]}px`, fontWeight: 600, letterSpacing: '-.02em', color: wordmarkColor ?? inkDefault, lineHeight: 1 }}
         >
-          PrivyPay
+          Pexa
         </span>
       ) : null}
     </span>

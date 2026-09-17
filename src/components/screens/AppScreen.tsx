@@ -48,7 +48,7 @@ export default function AppScreen({ v }: { v: Vals }) {
               <div onClick={v.goLanding} style={{ "display": "flex", "alignItems": "center", "gap": "9px", "padding": "0 8px 16px", "cursor": "pointer" }}>
                 <PrivyPayLogo size={24} />
                 <span style={{ "fontSize": "15px", "fontWeight": "600", "letterSpacing": "-.02em" }}>
-                  {"PrivyPay"}
+                  {"Pexa"}
                 </span>
               </div>
               {v.navGroups.map((g, i) => (
@@ -123,7 +123,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                     <div style={{ "display": "flex", "alignItems": "center", "gap": "9px" }}>
                       <PrivyPayLogo size={26} />
                       <span style={{ "fontSize": "14.5px", "fontWeight": "600", "letterSpacing": "-.015em" }}>
-                        {"PrivyPay agent"}
+                        {"Pexa agent"}
                       </span>
                     </div>
                     <div style={{ "display": "flex", "alignItems": "center", "gap": "7px", "border": "1px solid #DDE3F6", "background": "#F4F6FE", "borderRadius": "999px", "padding": "5px 11px" }}>
@@ -908,7 +908,7 @@ export default function AppScreen({ v }: { v: Vals }) {
                     {"What this does not do"}
                   </div>
                   <p style={{ "fontSize": "13.5px", "color": "#5B6472", "lineHeight": "1.6", "margin": "8px 0 0" }}>
-                    {"Payments settle on Celo, a public network. Amounts and addresses remain visible on-chain. These controls change how payment information is presented and shared inside PrivyPay — they do not make transactions anonymous or untraceable."}
+                    {"Payments settle on Celo, a public network. Amounts and addresses remain visible on-chain. These controls change how payment information is presented and shared inside Pexa — they do not make transactions anonymous or untraceable."}
                   </p>
                 </div>
               </div>

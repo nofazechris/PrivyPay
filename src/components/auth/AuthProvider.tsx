@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         appearance: {
           theme: 'light',
           accentColor: color.primary,
-          landingHeader: 'Sign in to PrivyPay',
+          landingHeader: 'Sign in to Pexa',
         },
         // Provision a Celo (EVM) embedded wallet automatically for users who don't have one,
         // with no seed phrase or connect-wallet step (§10). Keys stay in Privy's secure
