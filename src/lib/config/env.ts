@@ -49,6 +49,13 @@ const schema = z.object({
   CELO_RPC_URL: z.string().url().optional(),
   CELO_SEPOLIA_RPC_URL: z.string().url().optional(),
   CELO_USDC_ADDRESS: z.string().optional(),
+  /**
+   * Gasless relayer key (EIP-3009). A funded server wallet (holds a little CELO for gas) that
+   * submits `transferWithAuthorization` on the user's behalf — the user signs typed data and
+   * never pays gas. Server-only; never exposed to the client or the AI. Absent → the app falls
+   * back to the user paying native CELO gas via their embedded wallet.
+   */
+  RELAYER_PRIVATE_KEY: z.string().min(1).optional(),
 
   // Integrations (Stages 14–17)
   MCP_SECRET: z.string().min(1).optional(),

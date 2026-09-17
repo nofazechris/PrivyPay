@@ -13,6 +13,8 @@ export interface FeatureFlags {
   readonly codex: boolean;
   readonly whatsapp: boolean;
   readonly recurring: boolean;
+  /** Gasless payments via the EIP-3009 relayer (user never pays gas). */
+  readonly gaslessRelayer: boolean;
   readonly x402: boolean;
   readonly advancedPrivacy: boolean;
 }
@@ -23,6 +25,7 @@ export const features: FeatureFlags = {
   codex: false,
   whatsapp: Boolean(env.WHATSAPP_WEBHOOK_SECRET),
   recurring: false,
+  gaslessRelayer: Boolean(env.RELAYER_PRIVATE_KEY),
   x402: false,
   advancedPrivacy: false,
 };
