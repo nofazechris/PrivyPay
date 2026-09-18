@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "design:build": "node tools/transpile.js \"design/PrivyPay v3.dc.html\" src/components/screens src/styles/design.css",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

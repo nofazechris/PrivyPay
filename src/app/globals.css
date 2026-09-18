@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
-/* Base + pseudo-class rules compiled from the design file. Imported after Tailwind so the
-   design's own resets win over preflight. Regenerate with: npm run design:build */
+/* Base resets, the reduced-motion guard and shared keyframes (e.g. pp-spin). Imported after
+   Tailwind so these resets win over preflight. Now hand-maintained (the old design:build
+   generator was removed with the retired PrivyPay screens). */
 @import "../styles/design.css";
 
 @theme inline {

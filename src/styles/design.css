@@ -1,5 +1,6 @@
-/* AUTO-GENERATED from "PrivyPay v3.dc.html" — do not edit by hand. */
-/* Regenerate with: npm run design:build */
+/* Base resets, reduced-motion guard and shared keyframes (e.g. pp-spin) for the app. Originally
+   generated from a design export; now hand-maintained (the generator was retired). Imported by
+   src/app/globals.css. */
 
 *{box-sizing:border-box}
   body{margin:0;background:#F6F7F9;color:#0E1420;-webkit-font-smoothing:antialiased;font-family:var(--font-geist),system-ui,sans-serif}
