@@ -115,6 +115,17 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+@keyframes pp-atmos {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(3%, -2%, 0); }
+}
+@keyframes pp-atmos-2 {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-3%, 2%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="pp-atmos"] { animation: none !important; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   [style*="pp-pulse"], [style*="pp-up"], [style*="pp-step"], [style*="pp-fade"], [style*="pp-pop"] {
