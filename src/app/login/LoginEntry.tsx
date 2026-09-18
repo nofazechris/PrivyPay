@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { ToastProvider, Spinner, Text, Button } from '@/components/ui';
 import { color } from '@/lib/design/tokens';
-import PrivyLoginForm from './PrivyLoginForm';
+import { PexaAuth } from '@/components/pexa/PexaAuth';
 
 /**
  * Sign-in route. Sends already-authenticated visitors to the app, and — when auth isn't
@@ -47,7 +47,7 @@ export default function LoginEntry() {
 
   return (
     <ToastProvider>
-      <PrivyLoginForm />
+      <PexaAuth />
     </ToastProvider>
   );
 }

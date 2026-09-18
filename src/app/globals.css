@@ -111,6 +111,10 @@
   60% { transform: scale(1.08); }
   100% { opacity: 1; transform: scale(1); }
 }
+@keyframes pp-caret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   [style*="pp-pulse"], [style*="pp-up"], [style*="pp-step"], [style*="pp-fade"], [style*="pp-pop"] {
