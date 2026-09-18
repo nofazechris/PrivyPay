@@ -212,7 +212,8 @@ function useHeroParticles() {
       const w = bw, hh = bh;
       ctx.clearRect(0, 0, w, hh);
       ctx.lineCap = 'round';
-      ctx.filter = L.blur ? `blur(${L.blur}px)` : 'none';
+      // Blur is applied once via CSS on the canvas element (GPU-composited) rather than per-frame
+      // with ctx.filter, which re-rasterizes the whole canvas every frame — the main perf cost.
       group.paths.forEach((p) => {
         const pts = p.pts.map((q, qi) => [q[0] * w, q[1] * hh + Math.sin(t * 0.00016 * L.drift + p.phase + qi * 0.55) * p.amp]);
         p._pts = pts;
@@ -235,7 +236,6 @@ function useHeroParticles() {
           ctx.fill();
         });
       });
-      ctx.filter = 'none';
 
       pulses.filter((pl) => pl.li === li).forEach((pl) => {
         const p = group.paths[pl.pi];
@@ -303,10 +303,23 @@ function useHeroParticles() {
       for (let li = 0; li < net.length; li++) drawLayer(li, ts);
     };
 
+    let running = false;
     const tick = (ts: number) => {
-      if (!alive) return;
-      if (!frameAt || ts - frameAt >= 8) { frameAt = ts; frame(ts); }
+      if (!alive || !running) return;
+      // Cap to ~30fps — plenty for a background field, and roughly a quarter of the work of an
+      // unthrottled rAF on a high-refresh display.
+      if (!frameAt || ts - frameAt >= 33) { frameAt = ts; frame(ts); }
       raf = requestAnimationFrame(tick);
+    };
+    const startLoop = () => {
+      if (running) return;
+      running = true;
+      lastTs = performance.now();
+      raf = requestAnimationFrame(tick);
+    };
+    const stopLoop = () => {
+      running = false;
+      cancelAnimationFrame(raf);
     };
 
     const reduce = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -330,12 +343,18 @@ function useHeroParticles() {
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize);
-    lastTs = performance.now();
-    raf = requestAnimationFrame(tick);
+
+    // Only animate while the hero is actually on screen — no wasted frames once scrolled past.
+    const io = new IntersectionObserver(
+      (entries) => { if (entries[0]?.isIntersecting) startLoop(); else stopLoop(); },
+      { threshold: 0 },
+    );
+    if (canvasEls.Near) io.observe(canvasEls.Near);
 
     return () => {
       alive = false;
-      cancelAnimationFrame(raf);
+      stopLoop();
+      io.disconnect();
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
@@ -532,8 +551,8 @@ export function PexaLanding({ onEnter }: { onEnter: () => void }) {
         <div style={{ position: 'absolute', inset: '-12%', zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(40% 44% at 18% 74%,rgba(27,69,215,.06),rgba(27,69,215,0) 72%)', animation: 'pp-atmos-2 44s ease-in-out infinite alternate' }} />
         <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(90deg,rgba(27,69,215,.045) 1px,transparent 1px),linear-gradient(rgba(27,69,215,.045) 1px,transparent 1px)', backgroundSize: '72px 72px', WebkitMaskImage: 'radial-gradient(72% 62% at 52% 38%,#000,transparent)', maskImage: 'radial-gradient(72% 62% at 52% 38%,#000,transparent)' }} />
         {/* Parallax payment-network canvas layers (decorative). */}
-        <div ref={layerFar} style={{ position: 'absolute', inset: '-7%', zIndex: 0, pointerEvents: 'none', willChange: 'transform' }}><canvas ref={canvasFar} aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%' }} /></div>
-        <div ref={layerMid} style={{ position: 'absolute', inset: '-7%', zIndex: 0, pointerEvents: 'none', willChange: 'transform' }}><canvas ref={canvasMid} aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%' }} /></div>
+        <div ref={layerFar} style={{ position: 'absolute', inset: '-7%', zIndex: 0, pointerEvents: 'none', willChange: 'transform' }}><canvas ref={canvasFar} aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%', filter: 'blur(2.4px)' }} /></div>
+        <div ref={layerMid} style={{ position: 'absolute', inset: '-7%', zIndex: 0, pointerEvents: 'none', willChange: 'transform' }}><canvas ref={canvasMid} aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%', filter: 'blur(1px)' }} /></div>
         <div ref={layerNear} style={{ position: 'absolute', inset: '-7%', zIndex: 0, pointerEvents: 'none', willChange: 'transform' }}><canvas ref={canvasNear} aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%' }} /></div>
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '1160px', margin: '0 auto', padding: 'clamp(40px,6vw,88px) clamp(16px,3vw,24px) clamp(32px,4.6vw,56px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 'clamp(28px,4.6vw,60px)', alignItems: 'center' }}>
           <div>
