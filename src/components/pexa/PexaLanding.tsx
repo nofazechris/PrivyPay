@@ -84,6 +84,267 @@ function useHeroDemo() {
   return { stage, typed, replay: start, confirm };
 }
 
+/* --------------------------------------------------------- hero particle field */
+
+/**
+ * The hero's three parallax "payment network" canvas layers, ported faithfully from the design's
+ * driver. Curved links drift, nodes pulse, and payment pulses travel the paths (occasionally
+ * labelled, leaving a ring when they arrive). Layers parallax to the pointer and scroll. Honors
+ * prefers-reduced-motion (draws one static frame, no loop or listeners). Purely decorative.
+ */
+interface HeroLayer { key: 'Far' | 'Mid' | 'Near'; count: number; alpha: number; width: number; blur: number; parallax: number; drift: number; scroll: number }
+interface HeroPath { pts: number[][]; phase: number; amp: number; glow: number; nodeAt: boolean[]; _pts?: number[][] }
+interface HeroGroup { L: HeroLayer; paths: HeroPath[] }
+interface HeroPulse { li: number; pi: number; t: number; speed: number; label: string; labelled: boolean }
+interface HeroRing { li: number; x: number; y: number; r: number; alpha: number }
+
+const HERO_BG = {
+  layers: [
+    { key: 'Far', count: 6, alpha: 0.07, width: 1, blur: 2.4, parallax: 7, drift: 0.5, scroll: 0.05 },
+    { key: 'Mid', count: 4, alpha: 0.125, width: 1.15, blur: 1, parallax: 4, drift: 0.85, scroll: 0.08 },
+    { key: 'Near', count: 3, alpha: 0.19, width: 1.5, blur: 0, parallax: 2, drift: 1.2, scroll: 0.12 },
+  ] as HeroLayer[],
+  ink: '27,69,215',
+  pulseMin: 3200,
+  pulseMax: 7200,
+  pulseSpeed: 0.0004,
+  labels: ['$20 USDC', '$120 USDC', '$48 USDC', '$250 USDC'],
+};
+
+function useHeroParticles() {
+  const layerFar = useRef<HTMLDivElement>(null);
+  const layerMid = useRef<HTMLDivElement>(null);
+  const layerNear = useRef<HTMLDivElement>(null);
+  const canvasFar = useRef<HTMLCanvasElement>(null);
+  const canvasMid = useRef<HTMLCanvasElement>(null);
+  const canvasNear = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const layerEls: Record<string, HTMLDivElement | null> = { Far: layerFar.current, Mid: layerMid.current, Near: layerNear.current };
+    const canvasEls: Record<string, HTMLCanvasElement | null> = { Far: canvasFar.current, Mid: canvasMid.current, Near: canvasNear.current };
+    if (!canvasEls.Far || !canvasEls.Mid || !canvasEls.Near) return;
+
+    let net: HeroGroup[] = [];
+    let pulses: HeroPulse[] = [];
+    let rings: HeroRing[] = [];
+    let mx = 0, my = 0, tmx = 0, tmy = 0, scrollY = 0;
+    let nextPulse = 1400, lastTs = 0, frameAt = 0;
+    let bw = 320, bh = 240;
+    let raf = 0;
+    let alive = true;
+
+    const rand = (seed: number) => {
+      let a = seed >>> 0;
+      return () => { a = (a * 1664525 + 1013904223) >>> 0; return a / 4294967296; };
+    };
+
+    const buildNet = () => {
+      net = HERO_BG.layers.map((L, li) => {
+        const rnd = rand(9173 + li * 733);
+        const paths: HeroPath[] = [];
+        for (let i = 0; i < L.count; i++) {
+          const pts: number[][] = [];
+          let x = -0.24, y = rnd() * 1.26 - 0.13;
+          const segs = 3 + Math.floor(rnd() * 3);
+          for (let k = 0; k <= segs; k++) {
+            pts.push([x, Math.max(-0.18, Math.min(1.18, y))]);
+            x += (1.56 / segs) * (0.72 + rnd() * 0.56);
+            y += (rnd() - 0.46) * 0.42;
+          }
+          paths.push({ pts, phase: rnd() * 6.283, amp: 3 + rnd() * 9, glow: rnd() * 6.283, nodeAt: pts.map(() => rnd() > 0.44) });
+        }
+        return { L, paths };
+      });
+    };
+
+    const size = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      HERO_BG.layers.forEach((L) => {
+        const c = canvasEls[L.key];
+        if (!c) return;
+        const r = c.getBoundingClientRect();
+        bw = Math.max(320, r.width);
+        bh = Math.max(240, r.height);
+        c.width = Math.round(bw * dpr);
+        c.height = Math.round(bh * dpr);
+        c.getContext('2d')?.setTransform(dpr, 0, 0, dpr, 0, 0);
+      });
+      buildNet();
+    };
+
+    const pointAt = (pts: number[][], t: number): number[] => {
+      if (!pts || pts.length < 2) return [0, 0];
+      const segs: number[] = [];
+      let total = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        segs.push(d); total += d;
+      }
+      let want = Math.max(0, Math.min(1, t)) * total;
+      for (let i = 0; i < segs.length; i++) {
+        if (want <= segs[i] || i === segs.length - 1) {
+          const f = segs[i] ? want / segs[i] : 0;
+          return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f];
+        }
+        want -= segs[i];
+      }
+      return pts[pts.length - 1];
+    };
+
+    const spawnPulse = (fast: boolean) => {
+      const li = fast ? 2 : Math.random() < 0.55 ? 2 : 1;
+      const group = net[li];
+      if (!group) return;
+      const pi = Math.floor(Math.random() * group.paths.length);
+      pulses.push({
+        li, pi, t: 0,
+        speed: HERO_BG.pulseSpeed * (fast ? 1.8 : 0.8 + Math.random() * 0.6),
+        label: HERO_BG.labels[Math.floor(Math.random() * HERO_BG.labels.length)],
+        labelled: fast || Math.random() > 0.45,
+      });
+    };
+
+    const drawLayer = (li: number, t: number) => {
+      const group = net[li], L = group.L;
+      const c = canvasEls[L.key];
+      const ctx = c?.getContext('2d');
+      if (!ctx) return;
+      const w = bw, hh = bh;
+      ctx.clearRect(0, 0, w, hh);
+      ctx.lineCap = 'round';
+      ctx.filter = L.blur ? `blur(${L.blur}px)` : 'none';
+      group.paths.forEach((p) => {
+        const pts = p.pts.map((q, qi) => [q[0] * w, q[1] * hh + Math.sin(t * 0.00016 * L.drift + p.phase + qi * 0.55) * p.amp]);
+        p._pts = pts;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) {
+          const prev = pts[i - 1], cur = pts[i];
+          ctx.quadraticCurveTo(prev[0], prev[1], (prev[0] + cur[0]) / 2, (prev[1] + cur[1]) / 2);
+        }
+        ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+        ctx.strokeStyle = `rgba(${HERO_BG.ink},${L.alpha})`;
+        ctx.lineWidth = L.width;
+        ctx.stroke();
+        pts.forEach((q, qi) => {
+          if (!p.nodeAt[qi]) return;
+          const beat = 0.5 + 0.5 * Math.sin(t * 0.0008 + p.glow + qi);
+          ctx.beginPath();
+          ctx.arc(q[0], q[1], 1.5 + beat * 1.1, 0, 6.2832);
+          ctx.fillStyle = `rgba(${HERO_BG.ink},${(L.alpha * 2.5 * (0.45 + beat * 0.6)).toFixed(3)})`;
+          ctx.fill();
+        });
+      });
+      ctx.filter = 'none';
+
+      pulses.filter((pl) => pl.li === li).forEach((pl) => {
+        const p = group.paths[pl.pi];
+        if (!p || !p._pts) return;
+        const pos = pointAt(p._pts, pl.t);
+        const tail = pointAt(p._pts, Math.max(0, pl.t - 0.07));
+        const fade = pl.t < 0.1 ? pl.t / 0.1 : pl.t > 0.88 ? (1 - pl.t) / 0.12 : 1;
+        const g = ctx.createLinearGradient(tail[0], tail[1], pos[0], pos[1]);
+        g.addColorStop(0, `rgba(${HERO_BG.ink},0)`);
+        g.addColorStop(1, `rgba(${HERO_BG.ink},${(0.5 * fade).toFixed(3)})`);
+        ctx.beginPath();
+        ctx.moveTo(tail[0], tail[1]);
+        ctx.lineTo(pos[0], pos[1]);
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+        const halo = ctx.createRadialGradient(pos[0], pos[1], 0, pos[0], pos[1], 11);
+        halo.addColorStop(0, `rgba(${HERO_BG.ink},${(0.32 * fade).toFixed(3)})`);
+        halo.addColorStop(1, `rgba(${HERO_BG.ink},0)`);
+        ctx.beginPath(); ctx.arc(pos[0], pos[1], 11, 0, 6.2832); ctx.fillStyle = halo; ctx.fill();
+        ctx.beginPath(); ctx.arc(pos[0], pos[1], 2.5, 0, 6.2832);
+        ctx.fillStyle = `rgba(${HERO_BG.ink},${(0.85 * fade).toFixed(3)})`; ctx.fill();
+        if (pl.labelled && pl.t > 0.3 && pl.t < 0.74) {
+          const lf = Math.sin(((pl.t - 0.3) / 0.44) * Math.PI);
+          ctx.font = '500 11px ui-sans-serif, system-ui, sans-serif';
+          ctx.fillStyle = `rgba(21,58,180,${(0.62 * lf).toFixed(3)})`;
+          ctx.fillText(pl.label, pos[0] + 11, pos[1] - 9);
+        }
+      });
+
+      rings.filter((r) => r.li === li).forEach((r) => {
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.r, 0, 6.2832);
+        ctx.strokeStyle = `rgba(${HERO_BG.ink},${(r.alpha * 0.55).toFixed(3)})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      });
+    };
+
+    const frame = (ts: number) => {
+      const dt = Math.min(48, ts - (lastTs || ts));
+      lastTs = ts;
+      mx += (tmx - mx) * 0.055;
+      my += (tmy - my) * 0.055;
+      HERO_BG.layers.forEach((L) => {
+        const wrap = layerEls[L.key];
+        if (wrap) wrap.style.transform = `translate3d(${(mx * L.parallax).toFixed(2)}px,${(my * L.parallax - scrollY * L.scroll).toFixed(2)}px,0)`;
+      });
+      nextPulse -= dt;
+      if (nextPulse <= 0) {
+        spawnPulse(false);
+        nextPulse = HERO_BG.pulseMin + Math.random() * (HERO_BG.pulseMax - HERO_BG.pulseMin);
+      }
+      pulses.forEach((pl) => { pl.t += pl.speed * dt; });
+      pulses.filter((pl) => pl.t >= 1).forEach((pl) => {
+        const p = net[pl.li]?.paths[pl.pi];
+        if (p?._pts) {
+          const end = p._pts[p._pts.length - 1];
+          rings.push({ li: pl.li, x: end[0], y: end[1], r: 2, alpha: 0.85 });
+        }
+      });
+      pulses = pulses.filter((pl) => pl.t < 1);
+      rings.forEach((r) => { r.r += dt * 0.055; r.alpha -= dt * 0.0011; });
+      rings = rings.filter((r) => r.alpha > 0.02);
+      for (let li = 0; li < net.length; li++) drawLayer(li, ts);
+    };
+
+    const tick = (ts: number) => {
+      if (!alive) return;
+      if (!frameAt || ts - frameAt >= 8) { frameAt = ts; frame(ts); }
+      raf = requestAnimationFrame(tick);
+    };
+
+    const reduce = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    size();
+    if (reduce) {
+      for (let li = 0; li < net.length; li++) drawLayer(li, 0);
+      const onResize = () => { size(); for (let li = 0; li < net.length; li++) drawLayer(li, 0); };
+      window.addEventListener('resize', onResize);
+      return () => { alive = false; window.removeEventListener('resize', onResize); };
+    }
+
+    const onMove = (e: PointerEvent) => {
+      const c = canvasEls.Near;
+      if (!c) return;
+      const r = c.getBoundingClientRect();
+      tmx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+      tmy = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    };
+    const onScroll = () => { scrollY = window.scrollY || 0; };
+    const onResize = () => size();
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+    lastTs = performance.now();
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
+  return { layerFar, layerMid, layerNear, canvasFar, canvasMid, canvasNear };
+}
+
 /* -------------------------------------------------------------- command demo */
 
 type CmdState = 'idle' | 'working' | 'preview' | 'processing' | 'done' | 'answer';
@@ -242,6 +503,7 @@ function Eyebrow({ children }: { children: ReactNode }) {
 export function PexaLanding({ onEnter }: { onEnter: () => void }) {
   const hero = useHeroDemo();
   const cmd = useCmdDemo();
+  const { layerFar, layerMid, layerNear, canvasFar, canvasMid, canvasNear } = useHeroParticles();
 
   return (
     <div style={{ minHeight: '100dvh', background: color.background, color: color.ink }}>
@@ -269,6 +531,10 @@ export function PexaLanding({ onEnter }: { onEnter: () => void }) {
         <div style={{ position: 'absolute', inset: '-12%', zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(46% 42% at 68% 22%,rgba(27,69,215,.10),rgba(27,69,215,0) 70%)', animation: 'pp-atmos 34s ease-in-out infinite alternate' }} />
         <div style={{ position: 'absolute', inset: '-12%', zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(40% 44% at 18% 74%,rgba(27,69,215,.06),rgba(27,69,215,0) 72%)', animation: 'pp-atmos-2 44s ease-in-out infinite alternate' }} />
         <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(90deg,rgba(27,69,215,.045) 1px,transparent 1px),linear-gradient(rgba(27,69,215,.045) 1px,transparent 1px)', backgroundSize: '72px 72px', WebkitMaskImage: 'radial-gradient(72% 62% at 52% 38%,#000,transparent)', maskImage: 'radial-gradient(72% 62% at 52% 38%,#000,transparent)' }} />
+        {/* Parallax payment-network canvas layers (decorative). */}
+        <div ref={layerFar} style={{ position: 'absolute', inset: '-7%', zIndex: 0, pointerEvents: 'none', willChange: 'transform' }}><canvas ref={canvasFar} aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%' }} /></div>
+        <div ref={layerMid} style={{ position: 'absolute', inset: '-7%', zIndex: 0, pointerEvents: 'none', willChange: 'transform' }}><canvas ref={canvasMid} aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%' }} /></div>
+        <div ref={layerNear} style={{ position: 'absolute', inset: '-7%', zIndex: 0, pointerEvents: 'none', willChange: 'transform' }}><canvas ref={canvasNear} aria-hidden="true" style={{ display: 'block', width: '100%', height: '100%' }} /></div>
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '1160px', margin: '0 auto', padding: 'clamp(40px,6vw,88px) clamp(16px,3vw,24px) clamp(32px,4.6vw,56px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 'clamp(28px,4.6vw,60px)', alignItems: 'center' }}>
           <div>
             <div style={{ animation: 'pp-up .62s cubic-bezier(.2,.8,.3,1) both', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-geist-mono),monospace', fontSize: '11px', letterSpacing: '.14em', color: color.muted }}>
