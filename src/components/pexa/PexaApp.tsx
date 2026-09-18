@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { PrivyPayLogo } from '@/components/brand/PrivyPayLogo';
 import { ChatIcon, WalletIcon, ActivityIcon, PaymentsIcon, SettingsNavIcon, type Icon } from '@/components/ui/icons';
 import { color } from '@/lib/design/tokens';
@@ -8,6 +8,8 @@ import { statusColor } from '@/lib/format';
 import { ServiceConnect } from '@/components/app/ServiceConnect';
 import { AgentPayments } from '@/components/app/AgentPayments';
 import type { ActivityItem } from '@/components/auth/useActivity';
+import type { RequestItem } from '@/components/auth/useRequests';
+import type { RecurringItem } from '@/components/auth/useRecurring';
 import { useAgentChat, type AgentChatDeps, type AgentIntentShape, type ChatMessage } from '@/components/auth/useAgentChat';
 
 /**
@@ -37,12 +39,18 @@ export interface PexaAppProps {
   /** Decimal USDC balance string, e.g. "20.00". */
   balance: string;
   activity: ActivityItem[];
+  requests: RequestItem[];
+  recurring: RecurringItem[];
   onSignOut: () => void;
   /** Real agent + payment hooks (from AppGate). */
   parseCommand: AgentChatDeps['parseCommand'];
   executeSend: AgentChatDeps['executeSend'];
   createRequest?: AgentChatDeps['createRequest'];
   createRecurring?: AgentChatDeps['createRecurring'];
+  /** Pay a received request through the engine, then mark it settled. */
+  payRequest: (args: { requestId: string; recipient: string; amount: string }) => Promise<{ ok: boolean; error?: string }>;
+  setRecurringPaused: (id: string, paused: boolean) => Promise<{ ok: boolean; error?: string }>;
+  cancelRecurring: (id: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export function PexaApp(props: PexaAppProps) {
@@ -150,7 +158,16 @@ export function PexaApp(props: PexaAppProps) {
             {page === 'chat' ? <ChatScreen chat={chat} activity={activity} /> : null}
             {page === 'wallet' ? <WalletPage balance={balance} username={username} address={address} onSend={() => setPage('chat')} /> : null}
             {page === 'activity' ? <ActivityPage activity={activity} /> : null}
-            {page === 'payments' ? <Placeholder title="Payments" body="Requests and recurring payments live here — coming in the next slice. For now, ask the agent in Chat." /> : null}
+            {page === 'payments' ? (
+              <PaymentsPage
+                requests={props.requests}
+                recurring={props.recurring}
+                payRequest={props.payRequest}
+                setRecurringPaused={props.setRecurringPaused}
+                cancelRecurring={props.cancelRecurring}
+                onGoChat={() => setPage('chat')}
+              />
+            ) : null}
             {page === 'settings' ? <SettingsPage username={username} address={address} onSignOut={props.onSignOut} /> : null}
           </div>
         </div>
@@ -482,6 +499,156 @@ function ActivityPage({ activity }: { activity: ActivityItem[] }) {
   );
 }
 
+function PaymentsPage({
+  requests,
+  recurring,
+  payRequest,
+  setRecurringPaused,
+  cancelRecurring,
+  onGoChat,
+}: {
+  requests: RequestItem[];
+  recurring: RecurringItem[];
+  payRequest: PexaAppProps['payRequest'];
+  setRecurringPaused: PexaAppProps['setRecurringPaused'];
+  cancelRecurring: PexaAppProps['cancelRecurring'];
+  onGoChat: () => void;
+}) {
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<string | null>(null);
+  const withBusy = async (id: string, fn: () => Promise<{ ok: boolean; error?: string }>) => {
+    setBusy((b) => ({ ...b, [id]: true }));
+    setError(null);
+    const r = await fn();
+    if (!r.ok) setError(r.error ?? 'Something went wrong.');
+    setBusy((b) => ({ ...b, [id]: false }));
+  };
+
+  const incoming = requests.filter((r) => r.direction === 'incoming');
+  const outgoing = requests.filter((r) => r.direction === 'outgoing');
+  const activeRecurring = recurring.filter((r) => r.status !== 'cancelled');
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 'clamp(16px,2.6vw,28px) clamp(14px,2.6vw,26px) 48px' }}>
+      <div style={{ maxWidth: '760px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '22px', animation: 'pp-fade .22s ease both' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-.02em' }}>Requests & recurring</div>
+            <div style={{ fontSize: '13px', color: color.muted, marginTop: '3px' }}>Ask Pexa in Chat to create new ones.</div>
+          </div>
+          <button onClick={onGoChat} style={{ marginLeft: 'auto', border: `1px solid ${color.primary}`, background: color.primary, color: '#fff', fontSize: '13.5px', fontWeight: 500, padding: '9px 15px', borderRadius: '10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>New in Chat</button>
+        </div>
+
+        {error ? <div style={{ fontSize: '13px', color: color.danger, background: color.dangerSoft, border: '1px solid #F0DCD8', borderRadius: '10px', padding: '10px 13px' }}>{error}</div> : null}
+
+        {/* Requests to pay */}
+        <section>
+          <SectionHead title="Requests for you" subtitle="People asking you to pay. You confirm each one." />
+          <div style={{ background: color.surface, border: `1px solid ${color.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+            {incoming.length === 0 ? <Empty text="No incoming requests." /> : null}
+            {incoming.map((r) => (
+              <Row key={r.id}>
+                <Avatar name={r.counterparty} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: 500 }}>{r.counterparty}</div>
+                  <div style={{ fontSize: '12.5px', color: color.mutedStrong, marginTop: '2px' }}>{r.memo || 'No note'}</div>
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>${money(Number(r.amount))}</div>
+                  {r.payable ? (
+                    <button
+                      onClick={() => withBusy(r.id, () => payRequest({ requestId: r.id, recipient: r.counterparty, amount: r.amount }))}
+                      disabled={busy[r.id]}
+                      style={{ border: 'none', background: color.primary, color: '#fff', fontSize: '13.5px', fontWeight: 500, padding: '8px 15px', borderRadius: '9px', cursor: busy[r.id] ? 'default' : 'pointer', opacity: busy[r.id] ? 0.6 : 1 }}
+                    >
+                      {busy[r.id] ? 'Paying…' : 'Pay'}
+                    </button>
+                  ) : (
+                    <StatusPill label={r.status} />
+                  )}
+                </div>
+              </Row>
+            ))}
+          </div>
+        </section>
+
+        {/* Requests you sent */}
+        <section>
+          <SectionHead title="Requests you sent" subtitle="Waiting on others to pay." />
+          <div style={{ background: color.surface, border: `1px solid ${color.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+            {outgoing.length === 0 ? <Empty text="You haven’t sent any requests." /> : null}
+            {outgoing.map((r) => (
+              <Row key={r.id}>
+                <Avatar name={r.counterparty} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: 500 }}>{r.counterparty}</div>
+                  <div style={{ fontSize: '12.5px', color: color.mutedStrong, marginTop: '2px' }}>{r.memo || 'No note'}</div>
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>${money(Number(r.amount))}</div>
+                  <StatusPill label={r.status} />
+                </div>
+              </Row>
+            ))}
+          </div>
+        </section>
+
+        {/* Recurring */}
+        <section>
+          <SectionHead title="Recurring payments" subtitle="Scheduled payments. Pause, resume or cancel any time." />
+          <div style={{ background: color.surface, border: `1px solid ${color.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+            {activeRecurring.length === 0 ? <Empty text="No recurring payments." /> : null}
+            {activeRecurring.map((r) => (
+              <Row key={r.id}>
+                <Avatar name={r.counterparty} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: 500 }}>{r.counterparty}</div>
+                  <div style={{ fontSize: '12.5px', color: color.mutedStrong, marginTop: '2px' }}>
+                    {r.cadence}
+                    {r.next ? ` · next ${new Date(r.next).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
+                    {r.paused ? ' · paused' : ''}
+                  </div>
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '9px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>${money(Number(r.amount))}</div>
+                  <button
+                    onClick={() => withBusy(r.id, () => setRecurringPaused(r.id, !r.paused))}
+                    disabled={busy[r.id]}
+                    style={{ border: `1px solid ${color.borderStrong}`, background: color.surface, color: color.ink, fontSize: '13px', fontWeight: 500, padding: '7px 12px', borderRadius: '9px', cursor: busy[r.id] ? 'default' : 'pointer', opacity: busy[r.id] ? 0.6 : 1 }}
+                  >
+                    {r.paused ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    onClick={() => withBusy(r.id, () => cancelRecurring(r.id))}
+                    disabled={busy[r.id]}
+                    style={{ border: `1px solid ${color.borderStrong}`, background: color.surface, color: color.danger, fontSize: '13px', fontWeight: 500, padding: '7px 12px', borderRadius: '9px', cursor: busy[r.id] ? 'default' : 'pointer', opacity: busy[r.id] ? 0.6 : 1 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </Row>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function Row({ children }: { children: ReactNode }) {
+  return <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 17px', borderBottom: `1px solid #F2F3F6` }}>{children}</div>;
+}
+function Avatar({ name }: { name: string }) {
+  return <div style={{ width: 34, height: 34, borderRadius: '50%', background: color.primarySoft, color: color.primary, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>{(name.replace(/^@/, '')[0] ?? '?').toUpperCase()}</div>;
+}
+function Empty({ text }: { text: string }) {
+  return <div style={{ padding: '30px 18px', textAlign: 'center', fontSize: '13.5px', color: color.mutedStrong }}>{text}</div>;
+}
+function StatusPill({ label }: { label: string }) {
+  const pretty = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+  return <span style={{ fontSize: '12.5px', color: statusColor(pretty), fontWeight: 500 }}>{pretty}</span>;
+}
+
 function SettingsPage({ username, address, onSignOut }: { username?: string; address?: string; onSignOut: () => void }) {
   const [copied, setCopied] = useState(false);
   const short = address ? address.slice(0, 10) + '…' + address.slice(-6) : '—';
@@ -558,19 +725,6 @@ function SectionHead({ title, subtitle }: { title: string; subtitle: string }) {
     <div style={{ margin: '0 0 13px 2px' }}>
       <div style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-.02em' }}>{title}</div>
       <div style={{ fontSize: '13px', color: color.muted, lineHeight: 1.5, marginTop: '3px', maxWidth: '560px' }}>{subtitle}</div>
-    </div>
-  );
-}
-
-function Placeholder({ title, body }: { title: string; body: string }) {
-  return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 'clamp(16px,2.6vw,28px) clamp(14px,2.6vw,26px) 40px' }}>
-      <div style={{ maxWidth: '560px', margin: '0 auto', animation: 'pp-fade .22s ease both' }}>
-        <div style={{ background: color.surface, border: `1px solid ${color.border}`, borderRadius: '16px', padding: '28px' }}>
-          <div style={{ fontSize: '16px', fontWeight: 600 }}>{title}</div>
-          <p style={{ fontSize: '14px', color: color.muted, lineHeight: 1.6, margin: '8px 0 0' }}>{body}</p>
-        </div>
-      </div>
     </div>
   );
 }

@@ -33,8 +33,8 @@ export default function AppGate() {
   const { pay } = usePayment();
   const { items: activity, refresh: refreshActivity } = useActivity();
   const { add: addContact } = useContacts();
-  const { create: createRequest, markPaid: markRequestPaid } = useRequests();
-  const { create: createRecurring, setPaused: setRecurringPaused, cancel: cancelRecurring } = useRecurring();
+  const { items: requests, create: createRequest, markPaid: markRequestPaid } = useRequests();
+  const { items: recurring, create: createRecurring, setPaused: setRecurringPaused, cancel: cancelRecurring } = useRecurring();
   const router = useRouter();
 
   // Real payment executor + contact/request management the agent card and screens drive.
@@ -148,11 +148,16 @@ export default function AppGate() {
       address={walletAddress ?? wallet?.address}
       balance={balance ?? '0'}
       activity={activity}
+      requests={requests}
+      recurring={recurring}
       onSignOut={() => logout()}
       parseCommand={hooks.parseCommand}
       executeSend={hooks.executeSend}
       createRequest={hooks.createRequest}
       createRecurring={hooks.createRecurring}
+      payRequest={hooks.payRequest}
+      setRecurringPaused={hooks.setRecurringPaused}
+      cancelRecurring={hooks.cancelRecurring}
     />
   );
 }
