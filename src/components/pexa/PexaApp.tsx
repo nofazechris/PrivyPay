@@ -5,6 +5,8 @@ import { PrivyPayLogo } from '@/components/brand/PrivyPayLogo';
 import { ChatIcon, WalletIcon, ActivityIcon, PaymentsIcon, SettingsNavIcon, type Icon } from '@/components/ui/icons';
 import { color } from '@/lib/design/tokens';
 import { statusColor } from '@/lib/format';
+import { ServiceConnect } from '@/components/app/ServiceConnect';
+import { AgentPayments } from '@/components/app/AgentPayments';
 import type { ActivityItem } from '@/components/auth/useActivity';
 import { useAgentChat, type AgentChatDeps, type AgentIntentShape, type ChatMessage } from '@/components/auth/useAgentChat';
 
@@ -149,7 +151,7 @@ export function PexaApp(props: PexaAppProps) {
             {page === 'wallet' ? <WalletPage balance={balance} username={username} address={address} onSend={() => setPage('chat')} /> : null}
             {page === 'activity' ? <ActivityPage activity={activity} /> : null}
             {page === 'payments' ? <Placeholder title="Payments" body="Requests and recurring payments live here — coming in the next slice. For now, ask the agent in Chat." /> : null}
-            {page === 'settings' ? <Placeholder title="Settings" body="Connected agents (MCP), agent payments and privacy controls move here next. For now they remain wired on the backend." /> : null}
+            {page === 'settings' ? <SettingsPage username={username} address={address} onSignOut={props.onSignOut} /> : null}
           </div>
         </div>
 
@@ -476,6 +478,86 @@ function ActivityPage({ activity }: { activity: ActivityItem[] }) {
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+function SettingsPage({ username, address, onSignOut }: { username?: string; address?: string; onSignOut: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const short = address ? address.slice(0, 10) + '…' + address.slice(-6) : '—';
+  return (
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 'clamp(16px,2.6vw,28px) clamp(14px,2.6vw,26px) 48px' }}>
+      <div style={{ maxWidth: '760px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '22px', animation: 'pp-fade .22s ease both' }}>
+        {/* Account */}
+        <section>
+          <SectionHead title="Account" subtitle="Your Pexa identity and wallet." />
+          <div style={{ background: color.surface, border: `1px solid ${color.border}`, borderRadius: '16px', padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '13px' }}>
+              <div style={{ width: 42, height: 42, borderRadius: '50%', background: color.primarySoft, color: color.primary, fontSize: 17, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>{(username?.[0] ?? '?').toUpperCase()}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '17px', fontWeight: 600, letterSpacing: '-.02em' }}>{username ? '@' + username : '—'}</div>
+                <div style={{ fontSize: '13px', color: color.mutedStrong, marginTop: '2px' }}>People pay you by username.</div>
+              </div>
+              <button onClick={onSignOut} style={{ marginLeft: 'auto', border: `1px solid ${color.borderStrong}`, background: color.surface, color: color.danger, fontSize: '13.5px', fontWeight: 500, padding: '9px 15px', borderRadius: '10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Sign out</button>
+            </div>
+            <div style={{ marginTop: '17px', paddingTop: '15px', borderTop: `1px solid ${color.borderFaint}`, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '12.5px', color: color.mutedStrong }}>Celo wallet</div>
+                <div style={{ fontFamily: 'var(--font-geist-mono),monospace', fontSize: '13px', marginTop: '4px', wordBreak: 'break-all' }}>{short}</div>
+              </div>
+              {address ? (
+                <button
+                  onClick={() => navigator.clipboard?.writeText(address).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {})}
+                  style={{ marginLeft: 'auto', border: `1px solid ${color.borderStrong}`, background: color.surface, color: color.ink, fontSize: '13px', fontWeight: 500, padding: '8px 13px', borderRadius: '9px', cursor: 'pointer' }}
+                >
+                  {copied ? 'Copied' : 'Copy address'}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        {/* Connected agents (MCP) */}
+        <section>
+          <SectionHead title="Connected agents" subtitle="Connect ChatGPT or Claude so your agent can act on your behalf. You confirm every payment." />
+          <ServiceConnect />
+        </section>
+
+        {/* Delegated (agent) payments */}
+        <section>
+          <SectionHead title="Automation" subtitle="Let a connected agent settle a payment right after you confirm it — within your limits." />
+          <AgentPayments />
+        </section>
+
+        {/* Privacy */}
+        <section>
+          <SectionHead title="Privacy & limits" subtitle="How Pexa protects you." />
+          <div style={{ background: color.surface, border: `1px solid ${color.border}`, borderRadius: '16px', padding: '20px', display: 'grid', gap: '13px' }}>
+            {[
+              ['Preview-first', 'Pexa always shows a preview. Nothing moves until you confirm.'],
+              ['Spending limits', 'Every payment passes a $500 per-payment and $1,000 per-day cap — including agent-initiated ones.'],
+              ['Keys stay in Privy', 'Your wallet keys never leave Privy’s secure enclave. Pexa and connected agents never see them.'],
+            ].map(([t, b]) => (
+              <div key={t} style={{ display: 'flex', gap: '11px' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: color.success, marginTop: '7px', flex: 'none' }} />
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, letterSpacing: '-.01em' }}>{t}</div>
+                  <div style={{ fontSize: '13px', color: color.muted, lineHeight: 1.55, marginTop: '2px' }}>{b}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function SectionHead({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div style={{ margin: '0 0 13px 2px' }}>
+      <div style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-.02em' }}>{title}</div>
+      <div style={{ fontSize: '13px', color: color.muted, lineHeight: 1.5, marginTop: '3px', maxWidth: '560px' }}>{subtitle}</div>
     </div>
   );
 }
