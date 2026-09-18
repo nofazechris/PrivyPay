@@ -1,8 +1,24 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useWallets, useSendTransaction } from '@privy-io/react-auth';
+import { useWallets, useSendTransaction, useSignTypedData } from '@privy-io/react-auth';
 import { useAuth } from './AuthProvider';
+
+/** EIP-3009 typed data returned by /authorize when the gasless relayer is enabled. */
+interface RelayTypedData {
+  domain: { name: string; version: string; chainId: number; verifyingContract: string };
+  types: Record<string, { name: string; type: string }[]>;
+  primaryType: 'TransferWithAuthorization';
+  message: {
+    from: string;
+    to: string;
+    value: string;
+    validAfter: string;
+    validBefore: string;
+    nonce: string;
+    [k: string]: unknown;
+  };
+}
 
 /**
  * Client orchestration of a real USDC payment (§16). The engine (server) validates, applies
@@ -49,6 +65,7 @@ export function usePayment() {
   const { getAccessToken } = useAuth();
   const { wallets } = useWallets();
   const { sendTransaction } = useSendTransaction();
+  const { signTypedData } = useSignTypedData();
   const [stage, setStage] = useState<PayStage>('idle');
 
   const pay = useCallback(
@@ -68,10 +85,11 @@ export function usePayment() {
         const authRes = await authedFetch(getAccessToken, `/api/payments/${paymentId}/authorize`, { method: 'POST' });
         const authData = await authRes.json();
         if (!authRes.ok) return { status: 'failed', error: authData.message ?? 'Payment not authorized.' };
-        const { authorizationId, prepared, from } = authData as {
+        const { authorizationId, prepared, from, relay } = authData as {
           authorizationId: string;
           from: string;
           prepared: { to: string; data: string; value: string; feeCurrency: string; chainId: number };
+          relay: RelayTypedData | null;
         };
 
         // Sign with EXACTLY the wallet the server authorized (§80). A user can hold more than
@@ -89,29 +107,53 @@ export function usePayment() {
             error: 'Your account wallet isn’t available to sign in this browser. Sign out and back in, then retry.',
           };
         }
-        // Sign + broadcast through Privy's own embedded-wallet API (§16). Privy populates gas,
-        // nonce and fees, signs in its TEE, and broadcasts server-side — so this avoids both the
-        // browser's forno 403 and viem's serialization mismatch with Privy's API, which rejects
-        // a raw {to,data,value} tx (it wants its own `calls` format). Gas is paid in native CELO;
-        // gas-in-USDC needs Celo's CIP-64 type, which Privy can't produce — that's the gasless-
-        // relayer follow-up (§14). `showWalletUIs: false` keeps it headless (our "Confirm payment"
-        // step is the sole authorization surface), and `address` pins the send to exactly the
-        // wallet policy authorized (§80), never a stray second embedded wallet.
-        const { hash: txHash } = await sendTransaction(
-          {
-            to: prepared.to,
-            data: prepared.data,
-            value: BigInt(prepared.value || '0'),
-            chainId: prepared.chainId,
-          },
-          { address: embedded.address, uiOptions: { showWalletUIs: false } },
-        );
-        if (!txHash) return { status: 'failed', error: 'No transaction hash returned.' };
+        let txHash: string | null | undefined;
 
-        await authedFetch(getAccessToken, `/api/payments/${paymentId}/broadcast`, {
-          method: 'POST',
-          body: JSON.stringify({ authorizationId, txHash }),
-        });
+        if (relay) {
+          // Gasless path (§14, EIP-3009). The user signs a `transferWithAuthorization` (no gas),
+          // and the server relayer submits it on-chain and pays the CELO — so the user holds and
+          // sends USDC without ever needing native gas. Privy signs the typed data headlessly in
+          // its TEE (`showWalletUIs: false`); `address` pins it to exactly the authorized wallet.
+          const { signature } = await signTypedData(relay, { address: embedded.address, uiOptions: { showWalletUIs: false } });
+          const relayRes = await authedFetch(getAccessToken, `/api/payments/${paymentId}/relay`, {
+            method: 'POST',
+            body: JSON.stringify({ authorizationId, message: relay.message, signature }),
+          });
+          const relayData = await relayRes.json();
+          if (!relayRes.ok) return { status: 'failed', paymentId, error: relayData.message ?? 'Gasless payment failed.' };
+          txHash = relayData.txHash;
+          // The relay route records the broadcast and polls briefly; short-circuit if it already
+          // resolved, otherwise fall through to the shared polling loop below.
+          if (relayData.status === 'CONFIRMED') {
+            setStage('confirmed');
+            return { status: 'confirmed', paymentId, txHash, explorerUrl: relayData.explorerUrl };
+          }
+          if (relayData.status === 'FAILED') {
+            setStage('failed');
+            return { status: 'failed', paymentId, txHash, explorerUrl: relayData.explorerUrl, error: 'Transaction failed on-chain.' };
+          }
+        } else {
+          // Native path (§16): the user pays CELO gas. Sign + broadcast through Privy's own
+          // embedded-wallet API — Privy populates gas, nonce and fees, signs in its TEE, and
+          // broadcasts server-side — so this avoids both the browser's forno 403 and viem's
+          // serialization mismatch with Privy's API (which wants its own `calls` format).
+          const sent = await sendTransaction(
+            {
+              to: prepared.to,
+              data: prepared.data,
+              value: BigInt(prepared.value || '0'),
+              chainId: prepared.chainId,
+            },
+            { address: embedded.address, uiOptions: { showWalletUIs: false } },
+          );
+          txHash = sent.hash;
+          if (!txHash) return { status: 'failed', error: 'No transaction hash returned.' };
+
+          await authedFetch(getAccessToken, `/api/payments/${paymentId}/broadcast`, {
+            method: 'POST',
+            body: JSON.stringify({ authorizationId, txHash }),
+          });
+        }
 
         // Poll for confirmation.
         setStage('pending');
@@ -142,7 +184,7 @@ export function usePayment() {
         return { status: 'failed', error: msg.length > 120 ? msg.slice(0, 117) + '…' : msg };
       }
     },
-    [getAccessToken, wallets, sendTransaction],
+    [getAccessToken, wallets, sendTransaction, signTypedData],
   );
 
   return { pay, stage };
